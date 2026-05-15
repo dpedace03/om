@@ -82,9 +82,11 @@
 
             const days = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"];
             const todayDate = "15/05";
+            
+            // AppId dinámico del entorno
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'om-attendance-system';
 
-            // --- Inicialización y Autenticación ---
+            // --- Inicialización y Autenticación (Regla 3) ---
             useEffect(() => {
                 const init = async () => {
                     try {
@@ -93,7 +95,7 @@
                         const app = initializeApp(firebaseConfig);
                         const auth = getAuth(app);
                         
-                        // Auth Guard (Rule 3)
+                        // Esperar a que la autenticación se complete
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                             await signInWithCustomToken(auth, __initial_auth_token);
                         } else {
@@ -105,14 +107,13 @@
                                 setUser(u);
                                 setLoading(false);
                             } else {
-                                // Si no hay usuario después de intentar login, algo falló
                                 setError("No se pudo establecer la sesión segura.");
                                 setLoading(false);
                             }
                         });
                     } catch (err) {
                         console.error("Initialization Error:", err);
-                        setError("Error de conexión con la base de datos.");
+                        setError("Error de conexión inicial.");
                         setLoading(false);
                     }
                 };
@@ -120,7 +121,7 @@
                 init();
             }, []);
 
-            // --- Sincronización de Datos (Rule 1) ---
+            // --- Sincronización de Datos (Regla 1: Ruta Estricta) ---
             useEffect(() => {
                 if (!user) return;
                 const { getFirestore, collection, onSnapshot } = window.FirebaseDB;
@@ -137,7 +138,7 @@
                     (err) => {
                         console.error("Firestore Error:", err);
                         if (err.code === 'permission-denied') {
-                            setError("Error de permisos: Verifica el acceso a la base de datos.");
+                            setError("Error de permisos: Verifica que la colección esté en la ruta correcta.");
                         }
                     }
                 );
@@ -187,7 +188,6 @@
                     setEditingStudent(null);
                 } catch (err) {
                     console.error("Error saving:", err);
-                    alert("Error al guardar los datos.");
                 }
             };
 
@@ -233,7 +233,8 @@
                 try {
                     for (let line of lines) {
                         const parts = line.split(',');
-                        if (parts.length < 4 || line.startsWith('Apellido')) continue;
+                        // Evitar cabeceras o líneas vacías
+                        if (parts.length < 4 || line.toLowerCase().startsWith('apellido')) continue;
                         
                         const id = crypto.randomUUID();
                         const studentRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', id);
@@ -250,7 +251,6 @@
                     setIsImportOpen(false);
                 } catch (err) {
                     console.error("Import Error:", err);
-                    alert("Error durante la importación masiva.");
                 } finally {
                     setLoading(false);
                 }
@@ -260,13 +260,12 @@
             if (loading) return (
                 <div className="fixed inset-0 loading-overlay">
                     <div className="om-title text-4xl animate-pulse text-[#FFB266]">CARGANDO...</div>
-                    <div className="mt-4 text-[10px] uppercase font-bold tracking-widest opacity-50">Sincronizando con Otro Mundo</div>
                 </div>
             );
 
             if (error) return (
                 <div className="fixed inset-0 loading-overlay text-center px-10">
-                    <div className="text-red-400 font-black text-2xl uppercase mb-4">¡ERROR DE CONEXIÓN!</div>
+                    <div className="text-red-400 font-black text-2xl uppercase mb-4 tracking-tighter">ERROR DE PERMISOS</div>
                     <div className="text-white text-xs opacity-80 max-w-md mb-8">{error}</div>
                     <button onClick={() => window.location.reload()} className="bg-white text-blue-900 px-6 py-2 rounded-full font-bold uppercase text-xs">Reintentar</button>
                 </div>
@@ -281,7 +280,7 @@
 
                     {/* Header Principal */}
                     <header className="flex flex-col md:flex-row justify-between items-start mb-6 gap-6 border-b-2 border-white/10 pb-4 mt-8">
-                        <div className="animate-in fade-in slide-in-from-left duration-700">
+                        <div>
                             <h1 className="om-title text-5xl md:text-7xl">
                                 <span className="text-[#FFB266]">OTRO</span>
                                 <span className="text-[#D97706] ml-3">MUNDO</span>
@@ -289,7 +288,7 @@
                             <p className="text-xs font-bold tracking-[0.3em] mt-1 opacity-70">REGISTRO - {activeDay}</p>
                         </div>
                         
-                        <div className="flex flex-col items-end gap-3 w-full md:w-auto animate-in fade-in slide-in-from-right duration-700">
+                        <div className="flex flex-col items-end gap-3 w-full md:w-auto">
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => setIsImportOpen(true)}
@@ -308,15 +307,15 @@
                             {/* Estadísticas Visibles */}
                             <div className="flex gap-4 bg-black/40 p-4 rounded-3xl border-2 border-white/10 brutal-border w-full justify-between md:justify-end shadow-inner">
                                 <div className="text-center md:px-6 border-r border-white/10">
-                                    <p className="text-[10px] font-black uppercase opacity-50">Artistas</p>
+                                    <p className="text-[10px] font-black uppercase opacity-50 tracking-tighter">Artistas</p>
                                     <p className="text-4xl font-black italic leading-none mt-1">{stats.total}</p>
                                 </div>
                                 <div className="text-center md:px-6 border-r border-white/10">
-                                    <p className="text-[10px] font-black uppercase text-[#FFB266]">Presentes</p>
+                                    <p className="text-[10px] font-black uppercase text-[#FFB266] tracking-tighter">Presentes</p>
                                     <p className="text-4xl font-black italic text-[#FFB266] leading-none mt-1">{stats.pres}</p>
                                 </div>
                                 <div className="text-center md:px-6">
-                                    <p className="text-[10px] font-black uppercase text-red-400">Ausentes</p>
+                                    <p className="text-[10px] font-black uppercase text-red-400 tracking-tighter">Ausentes</p>
                                     <p className="text-4xl font-black italic text-red-400 leading-none mt-1">{stats.aus}</p>
                                 </div>
                             </div>
@@ -343,7 +342,7 @@
                             <input 
                                 type="text" 
                                 placeholder="BUSCAR ARTISTA O PROGRAMA..."
-                                className="w-full bg-white/10 border-2 border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold uppercase outline-none focus:border-[#FFB266] focus:bg-white/15 transition-all"
+                                className="w-full bg-white/10 border-2 border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold uppercase outline-none focus:border-[#FFB266] transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -351,7 +350,7 @@
                     </div>
 
                     {/* Tabla de Artistas */}
-                    <div className="bg-white rounded-[2.5rem] border-4 border-black overflow-hidden shadow-2xl animate-in fade-in duration-1000">
+                    <div className="bg-white rounded-[2.5rem] border-4 border-black overflow-hidden shadow-2xl">
                         <div className="overflow-x-auto max-h-[55vh]">
                             <table className="w-full text-left compact-table border-collapse sticky-header">
                                 <thead>
@@ -360,7 +359,7 @@
                                         <th className="py-4">Nombre</th>
                                         <th className="py-4">Programa</th>
                                         <th className="py-4">Sala</th>
-                                        <th className="py-4 text-center text-[#FFB266] w-14">√</th>
+                                        <th className="py-4 text-center text-[#FFB266] w-12">√</th>
                                         <th className="py-4 text-right w-16">Acc.</th>
                                     </tr>
                                 </thead>
@@ -371,7 +370,7 @@
                                             <td className="text-black/50 uppercase whitespace-nowrap">{student.nombre}</td>
                                             <td className="uppercase text-black/70 italic no-wrap-cell">{student.programa}</td>
                                             <td className="text-[10px] text-blue-900 font-black uppercase whitespace-nowrap">{student.sala}</td>
-                                            <td className="text-center">
+                                            <td className="text-center w-12">
                                                 <input 
                                                     type="checkbox" 
                                                     className="compact-checkbox"
@@ -379,7 +378,7 @@
                                                     onChange={() => toggleAttendance(student)}
                                                 />
                                             </td>
-                                            <td className="text-right">
+                                            <td className="text-right w-16">
                                                 <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => { setEditingStudent(student); setIsModalOpen(true); }} className="p-1.5 hover:bg-yellow-100 rounded-lg"><i data-lucide="edit-3" className="w-3.5 h-3.5 text-blue-900"></i></button>
                                                     <button onClick={() => { if(confirm('¿Eliminar registro?')) deleteStudent(student.id); }} className="p-1.5 hover:bg-red-500 hover:text-white rounded-lg"><i data-lucide="trash-2" className="w-3.5 h-3.5 text-red-600 group-hover:text-inherit"></i></button>
@@ -389,7 +388,7 @@
                                     )) : (
                                         <tr>
                                             <td colSpan="6" className="py-24 text-center">
-                                                <div className="text-gray-300 font-black text-3xl uppercase italic tracking-tighter opacity-20 italic">No hay artistas en {activeDay}</div>
+                                                <div className="text-gray-300 font-black text-3xl uppercase italic tracking-tighter opacity-20">Sin datos</div>
                                             </td>
                                         </tr>
                                     )}
@@ -398,7 +397,7 @@
                         </div>
                     </div>
 
-                    {/* Modal Estudiante */}
+                    {/* Modales */}
                     {isModalOpen && (
                         <div className="fixed inset-0 bg-blue-900/90 backdrop-blur-sm flex items-center justify-center p-4 z-">
                             <div className="bg-white border-4 border-black rounded-[3rem] w-full max-w-md p-10 shadow-2xl modal-enter">
@@ -415,7 +414,7 @@
                                         </div>
                                     ))}
                                     <div className="flex gap-4 pt-6">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 font-black uppercase text-xs text-black hover:bg-gray-100 rounded-2xl">Cancelar</button>
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 font-black uppercase text-xs text-black hover:bg-gray-100 rounded-2xl transition-all">Cancelar</button>
                                         <button type="submit" className="flex-1 bg-black text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all">Guardar</button>
                                     </div>
                                 </form>
@@ -423,7 +422,6 @@
                         </div>
                     )}
 
-                    {/* Modal Importación CSV */}
                     {isImportOpen && (
                         <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-">
                             <div className="bg-white border-4 border-black rounded-[3rem] w-full max-w-2xl p-10 shadow-2xl text-black modal-enter">
@@ -446,7 +444,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        // Refresco de iconos Lucide
         setInterval(() => {
             if (window.lucide) window.lucide.createIcons();
         }, 500);
