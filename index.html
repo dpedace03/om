@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -25,7 +25,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #1E3A8A; color: white; margin: 0; padding: 0; }
         .om-title { font-family: 'Archivo Black', sans-serif; text-transform: uppercase; font-style: italic; line-height: 0.85; }
         
-        /* Grilla con bordes rectos */
+        /* Grilla con bordes rectos y brutalistas */
         .compact-table td, .compact-table th { 
             padding: 0.1rem 0.4rem; 
             line-height: 1.1; 
@@ -56,11 +56,16 @@
             justify-content: center;
         }
 
-        /* Estilos rectos para todo */
+        /* Estilos rectos para todo el sitio */
         .no-round { border-radius: 0 !important; }
-
-        input, button, select, textarea {
+        input, button, select, textarea, div {
             border-radius: 0 !important;
+        }
+
+        /* Corregir color de texto en importación */
+        .import-textarea {
+            color: black !important;
+            background-color: white !important;
         }
     </style>
 </head>
@@ -72,7 +77,7 @@
 
         const App = () => {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
-            const [password, setPassword] = useState("");
+            const [passwordInput, setPasswordInput] = useState("");
             const [user, setUser] = useState(null);
             const [students, setStudents] = useState([]);
             const [activeDay, setActiveDay] = useState("LUNES");
@@ -87,24 +92,25 @@
             const todayDate = "15/05";
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'om-attendance-v2';
 
-            // --- Login Logic ---
+            // --- Lógica de Login ---
             const handleLogin = (e) => {
                 e.preventDefault();
-                if (password.toUpperCase() === "EZE") {
+                if (passwordInput.toUpperCase() === "EZE") {
                     setIsAuthenticated(true);
-                    localStorage.setItem("om_auth", "true");
+                    localStorage.setItem("om_auth_session", "true");
                 } else {
                     alert("Clave incorrecta");
+                    setPasswordInput("");
                 }
             };
 
             useEffect(() => {
-                if (localStorage.getItem("om_auth") === "true") {
+                if (localStorage.getItem("om_auth_session") === "true") {
                     setIsAuthenticated(true);
                 }
             }, []);
 
-            // --- Firebase Initialization ---
+            // --- Inicialización Firebase ---
             useEffect(() => {
                 if (!isAuthenticated) return;
                 
@@ -139,7 +145,7 @@
                 init();
             }, [isAuthenticated]);
 
-            // --- Data Sync ---
+            // --- Sincronización de Datos ---
             useEffect(() => {
                 if (!user) return;
                 const { getFirestore, collection, onSnapshot } = window.FirebaseDB;
@@ -157,7 +163,7 @@
                     }
                 );
                 return () => unsubscribe();
-            }, [user]);
+            }, [user, appId]);
 
             const filteredStudents = useMemo(() => {
                 const dayList = students.filter(s => s.dia === activeDay);
@@ -176,7 +182,7 @@
                 return { total, pres, aus: total - pres };
             }, [filteredStudents]);
 
-            // --- Database Actions ---
+            // --- Acciones de Base de Datos ---
             const handleAddOrUpdate = async (e) => {
                 e.preventDefault();
                 if (!user) return;
@@ -214,20 +220,51 @@
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id));
             };
 
-            // --- UI Screens ---
+            const handleBulkImport = async (e) => {
+                e.preventDefault();
+                const csvText = e.target.csvData.value;
+                const lines = csvText.split('\n');
+                
+                setLoading(true);
+                const { getFirestore, doc, setDoc } = window.FirebaseDB;
+                const db = getFirestore();
+                
+                try {
+                    for (let line of lines) {
+                        const parts = line.split(',');
+                        if (parts.length < 4 || line.toLowerCase().includes('apellido')) continue;
+                        const id = crypto.randomUUID();
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id), {
+                            apellido: (parts || "").trim(), 
+                            nombre: (parts || "").trim(), 
+                            programa: (parts || "").trim(), 
+                            sala: (parts || "").trim(), 
+                            dia: activeDay, 
+                            attendance: {}
+                        });
+                    }
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                    setIsImportOpen(false);
+                }
+            };
+
+            // --- Vistas ---
             if (!isAuthenticated) return (
                 <div className="fixed inset-0 bg-[#1E3A8A] flex flex-col items-center justify-center p-6">
-                    <h1 className="om-title text-5xl mb-8 text-[#FFB266]">OTRO MUNDO</h1>
+                    <h1 className="om-title text-5xl mb-8 text-[#FFB266]">OTROMUNDO</h1>
                     <form onSubmit={handleLogin} className="w-full max-w-xs space-y-4">
                         <input 
                             type="password" 
                             placeholder="CLAVE DE ACCESO" 
-                            className="w-full p-4 bg-white text-black font-bold uppercase no-round border-4 border-black outline-none"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full p-4 bg-white text-black font-bold uppercase border-4 border-black outline-none no-round"
+                            value={passwordInput}
+                            onChange={(e) => setPasswordInput(e.target.value)}
                             autoFocus
                         />
-                        <button className="w-full p-4 bg-black text-white font-black uppercase no-round border-4 border-black hover:bg-yellow-500 hover:text-black transition-colors">
+                        <button className="w-full p-4 bg-black text-white font-black uppercase border-4 border-black hover:bg-[#FFB266] hover:text-black transition-colors no-round">
                             INGRESAR
                         </button>
                     </form>
@@ -236,45 +273,47 @@
 
             if (loading) return (
                 <div className="fixed inset-0 loading-overlay">
-                    <div className="om-title text-3xl animate-pulse text-[#FFB266]">INICIANDO...</div>
+                    <div className="om-title text-3xl animate-pulse text-[#FFB266]">PROCESANDO...</div>
                 </div>
             );
 
             return (
-                <div className="max-w-full mx-auto p-2 md:p-4 text-white min-h-screen relative">
+                <div className="max-w-full mx-auto p-1 md:p-2 text-white min-h-screen relative bg-[#1E3A8A]">
                     {/* Header Compacto */}
-                    <header className="flex flex-wrap justify-between items-center mb-4 gap-2 border-b-4 border-black pb-2">
-                        <div className="flex items-baseline gap-4">
-                            <h1 className="om-title text-3xl md:text-4xl text-[#FFB266]">OTROMUNDO</h1>
-                            <span className="text-[10px] font-black uppercase bg-orange-600 px-2 py-0.5 brutal-border">{activeDay} - {todayDate}</span>
+                    <header className="flex justify-between items-center mb-2 px-1 border-b-2 border-black pb-1">
+                        <div className="flex items-center gap-3">
+                            <h1 className="om-title text-2xl md:text-3xl text-[#FFB266]">OTROMUNDO</h1>
+                            <div className="bg-black px-2 py-0.5 text-[9px] font-black italic uppercase text-white border border-white/20">
+                                {activeDay} • {todayDate}
+                            </div>
                         </div>
                         
                         <div className="flex items-center gap-4">
-                            {/* Contadores Compactos */}
-                            <div className="flex gap-4 bg-black/40 px-3 py-1 brutal-border text-[10px] font-black uppercase">
-                                <div className="flex gap-1">Artistas: <span className="text-white">{stats.total}</span></div>
-                                <div className="flex gap-1">Pres: <span className="text-green-400">{stats.pres}</span></div>
-                                <div className="flex gap-1">Aus: <span className="text-red-400">{stats.aus}</span></div>
+                            {/* Contadores Compactos en Header */}
+                            <div className="flex gap-3 bg-black/40 px-2 py-1 border border-black text-[9px] font-black uppercase">
+                                <div className="flex gap-1 items-center">Art: <span className="text-white text-sm">{stats.total}</span></div>
+                                <div className="flex gap-1 items-center border-l border-white/10 pl-3">Pre: <span className="text-[#FFB266] text-sm">{stats.pres}</span></div>
+                                <div className="flex gap-1 items-center border-l border-white/10 pl-3">Aus: <span className="text-red-400 text-sm">{stats.aus}</span></div>
                             </div>
                             
-                            <div className="flex gap-2">
-                                <button onClick={() => setIsImportOpen(true)} className="bg-white/10 px-3 py-1 text-[10px] font-bold uppercase brutal-border hover:bg-white/20">Importar</button>
-                                <button onClick={() => { setEditingStudent(null); setIsModalOpen(true); }} className="bg-white text-blue-900 px-3 py-1 text-[10px] font-black uppercase brutal-border hover:bg-[#FFB266]">Nuevo</button>
-                                <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="bg-red-600 text-white px-3 py-1 text-[10px] font-black uppercase brutal-border">Salir</button>
+                            <div className="flex gap-1">
+                                <button onClick={() => setIsImportOpen(true)} className="bg-white/10 px-2 py-1 text-[9px] font-bold uppercase border border-black hover:bg-white/20">Importar</button>
+                                <button onClick={() => { setEditingStudent(null); setIsModalOpen(true); }} className="bg-white text-blue-900 px-2 py-1 text-[9px] font-black uppercase border border-black hover:bg-[#FFB266]">Nuevo</button>
+                                <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="bg-red-700 text-white px-2 py-1 text-[9px] font-black uppercase border border-black">Salir</button>
                             </div>
                         </div>
                     </header>
 
-                    {/* Selectores Grandes (50/50) */}
-                    <div className="flex flex-col md:flex-row mb-4 border-4 border-black bg-black">
+                    {/* Selectores 50/50 */}
+                    <div className="flex flex-col md:flex-row mb-2 border-2 border-black bg-black">
                         {/* Selector de Días (50%) */}
-                        <div className="w-full md:w-1/2 flex">
+                        <div className="w-full md:w-1/2 flex divide-x divide-black">
                             {days.map(day => (
                                 <button
                                     key={day}
                                     onClick={() => setActiveDay(day)}
-                                    className={`flex-1 py-3 text-[10px] md:text-xs font-black transition-all border-r-2 border-black last:border-r-0 ${
-                                        activeDay === day ? "bg-[#FFB266] text-black" : "bg-white/10 text-white/50 hover:text-white"
+                                    className={`flex-1 py-2 text-[9px] font-black transition-all ${
+                                        activeDay === day ? "bg-[#FFB266] text-black" : "bg-white/5 text-white/40 hover:text-white"
                                     }`}
                                 >
                                     {day}
@@ -283,113 +322,100 @@
                         </div>
                         {/* Buscador (50%) */}
                         <div className="w-full md:w-1/2 relative bg-white">
-                            <i data-lucide="search" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30"></i>
+                            <i data-lucide="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30"></i>
                             <input 
                                 type="text" 
                                 placeholder="BUSCAR ARTISTA / PROGRAMA..."
-                                className="w-full bg-transparent pl-12 pr-4 py-3 text-xs font-bold uppercase text-black outline-none"
+                                className="w-full bg-transparent pl-10 pr-3 py-2 text-[10px] font-bold uppercase text-black outline-none placeholder:text-black/20"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    {/* Grilla Rectangular (Sin bordes redondeados) */}
-                    <div className="bg-white brutal-border no-round">
+                    {/* Grilla Brutalista (Bordes Rectos) */}
+                    <div className="bg-white border-2 border-black overflow-hidden no-round">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left compact-table border-collapse">
                                 <thead className="sticky-header">
-                                    <tr className="bg-black text-white text-[9px] font-black uppercase tracking-widest">
-                                        <th className="py-2">Apellido</th>
-                                        <th className="py-2">Nombre</th>
-                                        <th className="py-2">Programa</th>
-                                        <th className="py-2">Sala</th>
-                                        <th className="py-2 text-center text-[#FFB266] w-12">√</th>
-                                        <th className="py-2 text-right w-16">Acc</th>
+                                    <tr className="bg-black text-white text-[8px] font-black uppercase tracking-widest">
+                                        <th className="py-1.5">Apellido</th>
+                                        <th className="py-1.5">Nombre</th>
+                                        <th className="py-1.5">Programa</th>
+                                        <th className="py-1.5">Sala</th>
+                                        <th className="py-1.5 text-center text-[#FFB266] w-10">√</th>
+                                        <th className="py-1.5 text-right w-14">Acc</th>
                                     </tr>
                                 </thead>
-                                <tbody className="text-black font-bold text-[10px] divide-y divide-black bg-white">
+                                <tbody className="text-black font-bold text-[9px] bg-white divide-y divide-black">
                                     {filteredStudents.length > 0 ? filteredStudents.map(student => (
-                                        <tr key={student.id} className="hover:bg-yellow-50 transition-colors group">
+                                        <tr key={student.id} className="hover:bg-yellow-50 transition-colors">
                                             <td className="uppercase whitespace-nowrap">{student.apellido}</td>
                                             <td className="text-black/50 uppercase whitespace-nowrap">{student.nombre}</td>
-                                            <td className="uppercase italic text-black/70">{student.programa}</td>
+                                            <td className="uppercase italic text-black/70 truncate max-w-[200px]">{student.programa}</td>
                                             <td className="text-blue-900 font-black uppercase whitespace-nowrap">{student.sala}</td>
                                             <td className="text-center">
                                                 <input 
                                                     type="checkbox" 
-                                                    className="compact-checkbox no-round"
+                                                    className="compact-checkbox"
                                                     checked={!!(student.attendance && student.attendance[todayDate])}
                                                     onChange={() => toggleAttendance(student)}
                                                 />
                                             </td>
                                             <td className="text-right">
                                                 <div className="flex justify-end gap-1">
-                                                    <button onClick={() => { setEditingStudent(student); setIsModalOpen(true); }} className="p-1 hover:bg-blue-100 transition-colors"><i data-lucide="edit-3" className="w-3 h-3 text-blue-900"></i></button>
-                                                    <button onClick={() => deleteStudent(student.id)} className="p-1 hover:bg-red-100 transition-colors"><i data-lucide="trash-2" className="w-3 h-3 text-red-600"></i></button>
+                                                    <button onClick={() => { setEditingStudent(student); setIsModalOpen(true); }} className="p-0.5 hover:bg-blue-100"><i data-lucide="edit-3" className="w-3 h-3 text-blue-900"></i></button>
+                                                    <button onClick={() => deleteStudent(student.id)} className="p-0.5 hover:bg-red-100"><i data-lucide="trash-2" className="w-3 h-3 text-red-600"></i></button>
                                                 </div>
                                             </td>
                                         </tr>
                                     )) : (
-                                        <tr><td colSpan="6" className="py-12 text-center text-gray-300 font-black uppercase italic tracking-tighter">Sin registros</td></tr>
+                                        <tr><td colSpan="6" className="py-8 text-center text-gray-300 font-black uppercase italic text-sm">Vacío</td></tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    {/* Modal - Estilo Recto */}
+                    {/* Modal Registro */}
                     {isModalOpen && (
                         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-">
-                            <div className="bg-white border-8 border-black w-full max-w-md p-8 shadow-[10px_10px_0px_rgba(0,0,0,1)] no-round">
-                                <h2 className="text-3xl font-black italic uppercase mb-6 text-black tracking-tighter leading-none">
-                                    REGISTRAR <br/> <span className="text-[#D97706]">TALENTO</span>
+                            <div className="bg-white border-4 border-black w-full max-w-sm p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] no-round">
+                                <h2 className="text-2xl font-black italic uppercase mb-4 text-black leading-none">
+                                    GESTIONAR <span className="text-[#D97706]">TALENTO</span>
                                 </h2>
-                                <form onSubmit={handleAddOrUpdate} className="space-y-4 text-black">
+                                <form onSubmit={handleAddOrUpdate} className="space-y-3 text-black">
                                     {['apellido', 'nombre', 'programa', 'sala'].map(field => (
                                         <div key={field}>
-                                            <label className="text-[9px] font-black uppercase ml-2 text-gray-400 tracking-widest">{field}</label>
+                                            <label className="text-[8px] font-black uppercase ml-1 text-gray-400">{field}</label>
                                             <input name={field} required defaultValue={editingStudent ? editingStudent[field] : ""}
-                                                className="w-full bg-gray-50 border-4 border-black px-4 py-2 text-xs font-bold uppercase text-black outline-none focus:bg-yellow-50 transition-all no-round" />
+                                                className="w-full bg-gray-50 border-2 border-black px-3 py-1.5 text-xs font-bold uppercase text-black outline-none no-round" />
                                         </div>
                                     ))}
-                                    <div className="flex gap-4 pt-4">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 font-black uppercase text-xs text-black hover:bg-gray-200 no-round border-4 border-black">Cancelar</button>
-                                        <button type="submit" className="flex-1 bg-black text-white py-4 font-black uppercase text-xs no-round border-4 border-black hover:bg-yellow-500 hover:text-black">Guardar</button>
+                                    <div className="flex gap-2 pt-2">
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 font-black uppercase text-xs text-black border-2 border-black">Cerrar</button>
+                                        <button type="submit" className="flex-1 bg-black text-white py-3 font-black uppercase text-xs border-2 border-black hover:bg-[#D97706]">Guardar</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
 
-                    {/* Importar - Estilo Recto */}
+                    {/* Modal Importar */}
                     {isImportOpen && (
                         <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-">
-                            <div className="bg-white border-8 border-black w-full max-w-2xl p-8 shadow-[10px_10px_0px_rgba(0,0,0,1)] no-round">
-                                <h2 className="text-3xl font-black italic uppercase mb-2 tracking-tighter leading-none">IMPORTAR <span className="text-[#D97706]">{activeDay}</span></h2>
-                                <p className="text-[10px] uppercase font-bold text-gray-400 mb-6 tracking-widest opacity-70 italic">Apellido, Nombre, Programa, Sala</p>
-                                <form onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    const csvText = e.target.csvData.value;
-                                    const lines = csvText.split('\n');
-                                    setLoading(true);
-                                    const { getFirestore, doc, setDoc } = window.FirebaseDB;
-                                    const db = getFirestore();
-                                    for (let line of lines) {
-                                        const parts = line.split(',');
-                                        if (parts.length < 4 || line.toLowerCase().includes('apellido')) continue;
-                                        const id = crypto.randomUUID();
-                                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id), {
-                                            apellido: parts.trim(), nombre: parts.trim(), programa: parts.trim(), sala: parts.trim(), dia: activeDay, attendance: {}
-                                        });
-                                    }
-                                    setLoading(false);
-                                    setIsImportOpen(false);
-                                }} className="space-y-6">
-                                    <textarea name="csvData" required className="w-full h-64 bg-gray-50 border-4 border-black p-4 font-mono text-[10px] uppercase outline-none no-round resize-none" placeholder="ALZUALDE,JULIA,LA VOZ EN ESCENA,SEMILLA..."></textarea>
-                                    <div className="flex gap-4">
-                                        <button type="button" onClick={() => setIsImportOpen(false)} className="flex-1 py-4 font-black uppercase text-xs text-black border-4 border-black no-round">Cerrar</button>
-                                        <button type="submit" className="flex-1 bg-[#D97706] text-white py-4 font-black uppercase text-xs border-4 border-black no-round hover:bg-black">Importar Ahora</button>
+                            <div className="bg-white border-4 border-black w-full max-w-xl p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)] no-round">
+                                <h2 className="text-2xl font-black italic uppercase mb-1 text-black leading-none">IMPORTAR <span className="text-[#D97706]">{activeDay}</span></h2>
+                                <p className="text-[9px] uppercase font-bold text-gray-400 mb-4 tracking-tighter italic">Pegar: Apellido, Nombre, Programa, Sala</p>
+                                <form onSubmit={handleBulkImport} className="space-y-4">
+                                    <textarea 
+                                        name="csvData" 
+                                        required 
+                                        className="import-textarea w-full h-56 border-2 border-black p-4 font-mono text-[10px] uppercase outline-none no-round resize-none" 
+                                        placeholder="ALZUALDE,JULIA,LA VOZ EN ESCENA,SEMILLA..."></textarea>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={() => setIsImportOpen(false)} className="flex-1 py-3 font-black uppercase text-xs text-black border-2 border-black">Cancelar</button>
+                                        <button type="submit" className="flex-1 bg-[#D97706] text-white py-3 font-black uppercase text-xs border-2 border-black hover:bg-black">Importar ahora</button>
                                     </div>
                                 </form>
                             </div>
