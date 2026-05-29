@@ -743,6 +743,19 @@
                 text-underline-offset: 4px;
             }
 
+            /* Quitar etiquetas y el selector "Ir a fecha" para no encimar el título */
+            .date-selector label {
+                display: none;
+            }
+
+            .user-badge .badge-label {
+                display: none;
+            }
+
+            .fecha-historial {
+                display: none;
+            }
+
             /* Apilar las secciones en una columna */
             .main-layout {
                 flex-direction: column;
@@ -905,7 +918,7 @@
                     <input type="date" id="fecha" name="fecha">
                 </div>
                 <div class="user-badge">
-                    👤 Registrando como <strong id="usuarioActualLabel">—</strong>
+                    👤 <span class="badge-label">Registrando como </span><strong id="usuarioActualLabel">—</strong>
                     <button type="button" onclick="mostrarLogin()">Cambiar</button>
                 </div>
                 <div class="fecha-historial">
