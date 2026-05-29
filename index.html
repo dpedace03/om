@@ -63,6 +63,16 @@
             font-weight: bold;
         }
 
+        .logo-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .logo-toggle:hover {
+            filter: brightness(1.1);
+            text-decoration: underline;
+        }
+
         .date-section {
             display: flex;
             justify-content: flex-start;
@@ -100,7 +110,7 @@
             gap: 10px;
             position: absolute;
             right: 30px;
-            top: 60px;
+            top: 15px;
             z-index: 300;
             background: rgba(255, 255, 255, 0.97);
             padding: 12px;
@@ -404,6 +414,7 @@
             gap: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
+            align-items: center;
             position: sticky;
             top: 0;
             z-index: 200;
@@ -449,12 +460,33 @@
         }
 
         .search-section input[type="text"] {
-            flex: 1;
+            flex: 0 1 50%;
+            max-width: 50%;
             padding: 8px 12px;
             border: 2px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
-            min-width: 200px;
+            min-width: 150px;
+        }
+
+        .btn-add-icon {
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add-icon:hover {
+            background: #45a049;
+            transform: translateY(-1px);
         }
 
         .btn-add {
@@ -766,8 +798,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="music-icon" onclick="toggleButtons()">🎵</div>
-        <h1><span class="otro">Otro</span><span class="mundo">Mundo</span> - Asistencias</h1>
+        <h1><span class="logo-toggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones"><span class="otro">Otro</span><span class="mundo">Mundo</span></span> - Asistencias</h1>
 
         <div class="main-layout">
             <div class="left-section">
@@ -858,8 +889,8 @@
         </div>
 
         <div class="search-section">
-            <input type="text" id="busqueda" placeholder="Buscar por apellido, nombre, programa o sala..." oninput="filtrarAlumnos()">
-            <button class="btn btn-add hidden-buttons" id="addButton" onclick="agregarAlumno()">➕ Agregar Alumno</button>
+            <input type="text" id="busqueda" placeholder="Buscar…" oninput="filtrarAlumnos()">
+            <button class="btn-add-icon" id="addButton" onclick="agregarAlumno()" title="Agregar alumno">➕👤</button>
         </div>
 
         <div id="consultaBanner" style="display:none; background:#fff3e0; color:#e65100; padding:10px 15px; border-radius:8px; margin-bottom:15px; text-align:center; font-weight:500;">

@@ -94,17 +94,13 @@ function obtenerDiaSemana(fecha) {
     return dias[date.getDay()];
 }
 
-// Toggle visibilidad de botones
+// Toggle visibilidad del panel de opciones
 function toggleButtons() {
     const rightButtons = document.getElementById('rightButtons');
-    const addButton = document.getElementById('addButton');
-
-    if (rightButtons.style.display === 'none') {
+    if (rightButtons.style.display === 'none' || rightButtons.style.display === '') {
         rightButtons.style.display = 'flex';
-        addButton.style.display = 'inline-block';
     } else {
         rightButtons.style.display = 'none';
-        addButton.style.display = 'none';
     }
 }
 
@@ -119,10 +115,9 @@ document.addEventListener('DOMContentLoaded', function() {
     fechaInput.value = `${year}-${month}-${day}`;
 
     // Ocultar botones por defecto al cargar la página
+    // Ocultar el panel de opciones por defecto (el ícono de agregar queda visible)
     const rightButtons = document.getElementById('rightButtons');
-    const addButton = document.getElementById('addButton');
     if (rightButtons) rightButtons.style.display = 'none';
-    if (addButton) addButton.style.display = 'none';
 
     // Cargar datos desde localStorage
     cargarDesdeLocalStorage();
