@@ -97,6 +97,26 @@
             margin-bottom: 8px;
         }
 
+        .btn-refresh {
+            background: #ede7f6;
+            border: 1px solid #d6ccea;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5e35b1;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .btn-refresh:hover {
+            background: #e1d5f5;
+        }
+
+        .btn-refresh:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
         .center-section {
             flex: 0 0 auto;
             display: flex;
@@ -920,6 +940,7 @@
                 👤 <span class="badge-label">Está registrando </span><strong id="usuarioActualLabel">—</strong>
                 <button type="button" onclick="mostrarLogin()">Cambiar</button>
             </div>
+            <button type="button" class="btn-refresh" id="btnRefrescar" onclick="refrescarDatos()" title="Traer los últimos datos de la nube">🔄 Actualizar</button>
             <!-- Combo "Ir a fecha": oculto (display:none) por si se quiere reactivar en el futuro -->
             <div class="fecha-historial">
                 <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
@@ -1098,6 +1119,24 @@
 
     <!-- SheetJS con soporte de estilos (lee y escribe Excel, permite colorear celdas) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+    <!-- Cliente de Supabase (base de datos compartida en la nube) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ====== CONFIGURACIÓN DE SUPABASE ======
+        // Reemplazá estos dos valores por los de TU proyecto.
+        // Los encontrás en Supabase -> Project Settings -> API:
+        //   - "Project URL"            -> SUPABASE_URL
+        //   - "anon public" (API Key)  -> SUPABASE_ANON_KEY
+        const SUPABASE_URL = 'https://ifnvndqudynyngeuiytd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmbnZuZHF1ZHlueW5nZXVpeXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjY2MzIsImV4cCI6MjA5NTY0MjYzMn0.s7t8X9GHk-VqHIP9g7XcHgXtSY344ygiwVDGyZkwvnI';
+
+        // Crear el cliente (queda disponible como window.supabaseClient)
+        window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+
+    <!-- Capa de datos (reemplaza a localStorage) -->
+    <script src="supabase-data.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -44,28 +44,24 @@ function confirmarLogin() {
         return;
     }
     usuarioActual = nombre;
+    // El nombre propio se recuerda en este dispositivo (quién soy acá)
     localStorage.setItem(USUARIO_KEY, usuarioActual);
     document.getElementById('usuarioActualLabel').textContent = usuarioActual;
 
-    // Recordar el nombre en la lista de usuarios (para el desplegable)
-    let lista = [];
-    try { lista = JSON.parse(localStorage.getItem(USUARIOS_KEY) || '[]'); } catch (e) { lista = []; }
-    if (!lista.includes(usuarioActual)) {
-        lista.push(usuarioActual);
-        lista.sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(USUARIOS_KEY, JSON.stringify(lista));
-        poblarUsuariosDatalist();
-    }
+    // Registrar el nombre en la lista compartida (para el autocompletar de todos)
+    DB.agregarUsuario(usuarioActual)
+        .then(() => poblarUsuariosDatalist())
+        .catch(e => console.error('No se pudo guardar el usuario:', e));
 
     document.getElementById('loginModal').style.display = 'none';
 }
 
-// Poblar el desplegable de nombres conocidos
-function poblarUsuariosDatalist() {
+// Poblar el desplegable de nombres conocidos (desde la base compartida)
+async function poblarUsuariosDatalist() {
     const dl = document.getElementById('usuariosList');
     if (!dl) return;
     let lista = [];
-    try { lista = JSON.parse(localStorage.getItem(USUARIOS_KEY) || '[]'); } catch (e) { lista = []; }
+    try { lista = await DB.listarUsuarios(); } catch (e) { lista = []; }
     dl.innerHTML = lista.map(n => `<option value="${escaparHTML(n)}"></option>`).join('');
 }
 
@@ -105,7 +101,7 @@ function toggleButtons() {
 }
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Establecer fecha actual (usando zona horaria local)
     const fechaInput = document.getElementById('fecha');
     const hoy = new Date();
@@ -119,8 +115,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const rightButtons = document.getElementById('rightButtons');
     if (rightButtons) rightButtons.style.display = 'none';
 
-    // Cargar datos desde localStorage
-    cargarDesdeLocalStorage();
+    // Cargar datos desde Supabase (base compartida)
+    await cargarDesdeSupabase();
 
     // Seleccionar día por default según fecha actual
     const fechaActual = fechaInput.value;
@@ -215,28 +211,42 @@ document.addEventListener('DOMContentLoaded', function() {
     mostrarLogin();
 });
 
-// Cargar datos desde localStorage
-function cargarDesdeLocalStorage() {
-    const datos = localStorage.getItem(STORAGE_KEY);
-    if (datos) {
-        alumnosData = JSON.parse(datos);
-        // Calcular el siguiente ID
-        if (alumnosData.length > 0) {
-            nextId = Math.max(...alumnosData.map(a => a.id)) + 1;
-        }
-    }
-
-    // Cargar registros de asistencia
-    const asistencia = localStorage.getItem(ASISTENCIA_KEY);
-    if (asistencia) {
-        registrosAsistencia = JSON.parse(asistencia);
+// Cargar datos desde Supabase (base compartida en la nube)
+async function cargarDesdeSupabase() {
+    try {
+        const { alumnos, registros } = await DB.cargarTodo();
+        alumnosData = alumnos;
+        registrosAsistencia = registros;
+        return true;
+    } catch (e) {
+        console.error('Error al cargar desde Supabase:', e);
+        mostrarModal(
+            'Error de conexión',
+            'No se pudieron cargar los datos desde la nube. Revisá tu conexión a internet o la configuración de Supabase (URL y clave en index.html).'
+        );
+        return false;
     }
 }
 
-// Guardar en localStorage
-function guardarEnLocalStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(alumnosData));
-    localStorage.setItem(ASISTENCIA_KEY, JSON.stringify(registrosAsistencia));
+// Traer de nuevo los datos de la nube y refrescar la vista (botón 🔄 Actualizar)
+async function refrescarDatos() {
+    const btn = document.getElementById('btnRefrescar');
+    if (cambiosPendientes.size > 0) {
+        mostrarModal(
+            'Hay cambios sin guardar',
+            'Tenés cambios sin guardar. Si actualizás ahora se perderán. Guardá primero con 💾 Guardar Cambios.'
+        );
+        return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Actualizando…'; }
+    const ok = await cargarDesdeSupabase();
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar'; }
+    if (ok) {
+        actualizarSelectorFechas();
+        if (diaSeleccionado) {
+            cargarAlumnos(diaSeleccionado);
+        }
+    }
 }
 
 // Seleccionar día
@@ -442,9 +452,9 @@ function irAFechaRegistrada(valor) {
 }
 
 // Exportar copia de seguridad (JSON con alumnos + asistencia + usuarios)
-function exportarBackup() {
+async function exportarBackup() {
     let usuarios = [];
-    try { usuarios = JSON.parse(localStorage.getItem(USUARIOS_KEY) || '[]'); } catch (e) { usuarios = []; }
+    try { usuarios = await DB.listarUsuarios(); } catch (e) { usuarios = []; }
 
     const datos = {
         app: 'OtroMundo-Asistencias',
@@ -503,28 +513,28 @@ function handleBackupRestore(event) {
 }
 
 // Aplicar el respaldo
-function restaurarBackup(datos) {
-    alumnosData = datos.alumnos;
-    registrosAsistencia = datos.asistencia;
-    nextId = alumnosData.length > 0 ? Math.max(...alumnosData.map(a => a.id)) + 1 : 1;
+async function restaurarBackup(datos) {
+    try {
+        await DB.reemplazarTodo(datos.alumnos || [], datos.asistencia || [], datos.usuarios || []);
 
-    if (Array.isArray(datos.usuarios)) {
-        localStorage.setItem(USUARIOS_KEY, JSON.stringify(datos.usuarios));
-        poblarUsuariosDatalist();
+        // Recargar desde la nube para tener los ids reales en memoria
+        await cargarDesdeSupabase();
+        await poblarUsuariosDatalist();
+
+        cambiosPendientes.clear();
+        actualizarBotonGuardar();
+        actualizarSelectorFechas();
+        if (diaSeleccionado) {
+            cargarAlumnos(diaSeleccionado);
+        }
+
+        setTimeout(() => {
+            mostrarModal('Restauración exitosa', 'Los datos del respaldo se subieron a la nube correctamente.');
+        }, 0);
+    } catch (e) {
+        console.error('Error al restaurar el backup:', e);
+        mostrarModal('Error', 'No se pudo subir el respaldo a la nube. Revisá la conexión e intentá de nuevo.');
     }
-
-    guardarEnLocalStorage();
-    cambiosPendientes.clear();
-    actualizarBotonGuardar();
-    actualizarSelectorFechas();
-    if (diaSeleccionado) {
-        cargarAlumnos(diaSeleccionado);
-    }
-
-    // Mensaje de éxito en un nuevo ciclo para que el cierre del modal no lo oculte
-    setTimeout(() => {
-        mostrarModal('Restauración exitosa', 'Los datos del respaldo se cargaron correctamente.');
-    }, 0);
 }
 
 // Exportar la asistencia a un archivo Excel
@@ -702,7 +712,6 @@ function guardarNuevoAlumno() {
     }
 
     const nuevoAlumno = {
-        id: nextId++,
         apellido: apellido,
         nombre: nombre,
         programa: programa,
@@ -710,12 +719,18 @@ function guardarNuevoAlumno() {
         dia_semana: diaSeleccionado
     };
 
-    alumnosData.push(nuevoAlumno);
-    guardarEnLocalStorage();
-
-    mostrarModal('Éxito', 'Alumno agregado exitosamente', () => {
-        cargarAlumnos(diaSeleccionado);
-    });
+    DB.insertarAlumno(nuevoAlumno)
+        .then(creado => {
+            nuevoAlumno.id = creado.id;
+            alumnosData.push(nuevoAlumno);
+            mostrarModal('Éxito', 'Alumno agregado exitosamente', () => {
+                cargarAlumnos(diaSeleccionado);
+            });
+        })
+        .catch(e => {
+            console.error('Error al agregar alumno:', e);
+            mostrarModal('Error', 'No se pudo guardar el alumno en la nube. Revisá la conexión e intentá de nuevo.');
+        });
 }
 
 // Cancelar agregar alumno
@@ -827,7 +842,7 @@ function marcarPresente(id, presente) {
         return;
     }
 
-    cambiosPendientes.add(id);
+    cambiosPendientes.add(id + '|' + document.getElementById('fecha').value);
 
     const fecha = document.getElementById('fecha').value;
     const ahora = new Date().toISOString();
@@ -884,17 +899,36 @@ function actualizarBotonGuardar() {
 }
 
 // Guardar cambios pendientes
-function guardarCambios() {
+async function guardarCambios() {
     if (cambiosPendientes.size === 0) {
         mostrarModal('Información', 'No hay cambios pendientes para guardar');
         return;
     }
 
-    guardarEnLocalStorage();
-    cambiosPendientes.clear();
-    actualizarBotonGuardar();
-    actualizarSelectorFechas();
-    mostrarModal('Éxito', 'Cambios guardados exitosamente');
+    // Reunir los registros modificados (cada clave es "alumno_id|fecha")
+    const aGuardar = [];
+    cambiosPendientes.forEach(clave => {
+        const sep = clave.lastIndexOf('|');
+        const alumnoId = parseInt(clave.slice(0, sep), 10);
+        const fecha = clave.slice(sep + 1);
+        const reg = registrosAsistencia.find(r => r.alumno_id === alumnoId && r.fecha === fecha);
+        if (reg) aGuardar.push(reg);
+    });
+
+    const btn = document.getElementById('btnGuardar');
+    if (btn) { btn.disabled = true; }
+    try {
+        await DB.guardarAsistencia(aGuardar);
+        cambiosPendientes.clear();
+        actualizarBotonGuardar();
+        actualizarSelectorFechas();
+        mostrarModal('Éxito', 'Cambios guardados exitosamente');
+    } catch (e) {
+        console.error('Error al guardar asistencia:', e);
+        mostrarModal('Error', 'No se pudieron guardar los cambios en la nube. Tu marca quedó en pantalla; revisá la conexión e intentá de nuevo.');
+    } finally {
+        if (btn) { btn.disabled = false; }
+    }
 }
 
 // Eliminar alumno
@@ -906,12 +940,18 @@ function eliminarAlumno(id) {
         'Confirmar eliminación',
         `¿Estás seguro de eliminar a ${alumno.apellido} ${alumno.nombre}?`,
         () => {
-            alumnosData = alumnosData.filter(a => a.id !== id);
-            // Eliminar también los registros de asistencia de este alumno
-            registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== id);
-            guardarEnLocalStorage();
-            actualizarSelectorFechas();
-            cargarAlumnos(diaSeleccionado);
+            DB.eliminarAlumno(id)
+                .then(() => {
+                    alumnosData = alumnosData.filter(a => a.id !== id);
+                    // La asistencia se borra en cascada en la base; la limpiamos en memoria
+                    registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== id);
+                    actualizarSelectorFechas();
+                    cargarAlumnos(diaSeleccionado);
+                })
+                .catch(e => {
+                    console.error('Error al eliminar alumno:', e);
+                    mostrarModal('Error', 'No se pudo eliminar el alumno en la nube. Revisá la conexión e intentá de nuevo.');
+                });
         }
     );
 }
@@ -936,11 +976,21 @@ function borrarTodosDelDia() {
         'Confirmar eliminación',
         `¿Confirma eliminar a todos del día ${diaSeleccionado}? (${alumnosDelDia.length} alumnos)`,
         () => {
-            alumnosData = alumnosData.filter(a =>
-                a.dia_semana !== diaSeleccionado
-            );
-            guardarEnLocalStorage();
-            cargarAlumnos(diaSeleccionado);
+            const ids = alumnosDelDia.map(a => a.id);
+            DB.eliminarAlumnosPorDia([diaSeleccionado])
+                .then(() => {
+                    alumnosData = alumnosData.filter(a =>
+                        a.dia_semana !== diaSeleccionado
+                    );
+                    // Limpiar la asistencia de esos alumnos en memoria
+                    registrosAsistencia = registrosAsistencia.filter(r => !ids.includes(r.alumno_id));
+                    actualizarSelectorFechas();
+                    cargarAlumnos(diaSeleccionado);
+                })
+                .catch(e => {
+                    console.error('Error al borrar el día:', e);
+                    mostrarModal('Error', 'No se pudo borrar el día en la nube. Revisá la conexión e intentá de nuevo.');
+                });
         }
     );
 }
@@ -1074,30 +1124,35 @@ function importarAlumnos(alumnos, omitidas) {
             // Obtener los días que están en el Excel
             const diasEnExcel = [...new Set(alumnos.map(a => a.dia_semana))];
 
-            // Eliminar solo los alumnos de los días que están en el Excel (sin importar la fecha)
-            alumnosData = alumnosData.filter(a =>
-                !diasEnExcel.includes(a.dia_semana)
-            );
+            (async () => {
+                try {
+                    // Borrar en la nube solo los alumnos de los días presentes en el Excel
+                    await DB.eliminarAlumnosPorDia(diasEnExcel);
+                    // Insertar los nuevos alumnos y recuperar sus ids asignados
+                    const creados = await DB.insertarAlumnos(alumnos);
 
-            // Agregar nuevos alumnos
-            alumnosData = alumnosData.concat(alumnos);
+                    // Reflejar en memoria: quitar los días reemplazados y sumar los creados
+                    alumnosData = alumnosData.filter(a => !diasEnExcel.includes(a.dia_semana));
+                    alumnosData = alumnosData.concat(creados);
+                    // Quitar de memoria la asistencia de alumnos que ya no existen
+                    const idsVigentes = new Set(alumnosData.map(a => a.id));
+                    registrosAsistencia = registrosAsistencia.filter(r => idsVigentes.has(r.alumno_id));
 
-            // Guardar en localStorage
-            guardarEnLocalStorage();
+                    if (diaSeleccionado) {
+                        cargarAlumnos(diaSeleccionado);
+                    }
 
-            // Refrescar la tabla directamente (esto no lo afecta el cierre del modal)
-            if (diaSeleccionado) {
-                cargarAlumnos(diaSeleccionado);
-            }
-
-            // Mostrar el éxito en un nuevo ciclo para que el cierre del modal
-            // de confirmación no oculte de inmediato este mensaje.
-            setTimeout(() => {
-                mostrarModal(
-                    'Importación exitosa',
-                    `Se importaron ${alumnos.length} alumnos exitosamente.${detalleOmitidas}`
-                );
-            }, 0);
+                    setTimeout(() => {
+                        mostrarModal(
+                            'Importación exitosa',
+                            `Se importaron ${alumnos.length} alumnos exitosamente.${detalleOmitidas}`
+                        );
+                    }, 0);
+                } catch (e) {
+                    console.error('Error al importar:', e);
+                    mostrarModal('Error', 'No se pudo completar la importación en la nube. Revisá la conexión e intentá de nuevo.');
+                }
+            })();
         }
     );
 }
