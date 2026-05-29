@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia OM - Registro de Asistencia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            position: relative;
+        }
+
+        .music-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .music-icon:hover {
+            transform: scale(1.2);
+        }
+
+        .hidden-buttons {
+            display: none;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 0 0 15px 0;
+            font-size: 2.5em;
+        }
+
+        .otro {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .mundo {
+            color: #FF8C00;
+            font-weight: bold;
+        }
+
+        .logo-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .logo-toggle:hover {
+            filter: brightness(1.1);
+            text-decoration: underline;
+        }
+
+        .date-section {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .main-layout {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .left-section {
+            flex: 0 0 auto;
+            position: absolute;
+            left: 30px;
+            top: 30px;
+        }
+
+        .center-section {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .right-section {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: absolute;
+            right: 30px;
+            top: 15px;
+            z-index: 300;
+            background: rgba(255, 255, 255, 0.97);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-selector label {
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .date-selector input[type="date"] {
+            padding: 6px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .stats-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .stat-item:nth-child(1) {
+            background: #e3f2fd;
+        }
+
+        .stat-item:nth-child(2) {
+            background: #e8f5e9;
+        }
+
+        .stat-item:nth-child(3) {
+            background: #ffebee;
+        }
+
+        .stat-item:nth-child(4) {
+            background: #fff3e0;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .import-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .import-section input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        /* Mismo tamaño para todos estos botones */
+        .btn-import,
+        .btn-delete-day,
+        .btn-stats,
+        .btn-export,
+        .btn-backup,
+        .btn-restore,
+        .btn-add {
+            width: 190px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .btn-import {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-import:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete-day {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete-day:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-stats {
+            background: #673ab7;
+            color: white;
+        }
+
+        .btn-stats:hover {
+            background: #5e35b1;
+            transform: translateY(-2px);
+        }
+
+        .btn-export {
+            background: #009688;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #00796b;
+            transform: translateY(-2px);
+        }
+
+        .btn-backup {
+            background: #607d8b;
+            color: white;
+        }
+
+        .btn-backup:hover {
+            background: #546e7a;
+            transform: translateY(-2px);
+        }
+
+        .btn-restore {
+            background: #795548;
+            color: white;
+        }
+
+        .btn-restore:hover {
+            background: #5d4037;
+            transform: translateY(-2px);
+        }
+
+        #backupFile {
+            display: none;
+        }
+
+        /* Botón Guardar con cambios pendientes */
+        .btn-save.pendiente {
+            background: #FF9800;
+            animation: latido 1.6s ease-in-out infinite;
+        }
+
+        .btn-save.pendiente:hover {
+            background: #fb8c00;
+        }
+
+        @keyframes latido {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.5); }
+            50% { box-shadow: 0 0 0 6px rgba(255, 152, 0, 0); }
+        }
+
+        /* Selector "Ir a fecha" */
+        .fecha-historial {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .fecha-historial label {
+            font-weight: bold;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .fecha-historial select {
+            padding: 5px 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            max-width: 200px;
+        }
+
+        .stats-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px;
+        }
+
+        .stats-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f5f3fb;
+        }
+
+        .stats-list .stats-label {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .stats-list .stats-day {
+            font-weight: bold;
+            color: #673ab7;
+            font-size: 16px;
+        }
+
+        .stats-list .stats-count {
+            color: #888;
+            font-size: 14px;
+            margin-left: 6px;
+        }
+
+        .btn-save {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+
+        .day-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .day-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .day-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .day-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .day-btn.lunes:hover { background: #FF6B6B; color: white; }
+        .day-btn.martes:hover { background: #4ECDC4; color: white; }
+        .day-btn.miercoles:hover { background: #45B7D1; color: white; }
+        .day-btn.jueves:hover { background: #96CEB4; color: white; }
+        .day-btn.viernes:hover { background: #FFEAA7; color: #333; }
+
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            padding: 12px 0;
+            box-shadow: 0 4px 8px -4px rgba(0, 0, 0, 0.15);
+        }
+
+        .marcado-por {
+            font-size: 10px;
+            color: #888;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #555;
+            margin: 8px 0 0;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .user-badge strong {
+            color: #764ba2;
+        }
+
+        .user-badge button {
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 11px;
+            padding: 2px 8px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .user-badge button:hover {
+            background: #f0f0f0;
+        }
+
+        .search-section input[type="text"] {
+            flex: 0 1 50%;
+            max-width: 50%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .btn-add-icon {
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add-icon:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 4px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            line-height: 1;
+        }
+
+        th {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        td {
+            font-size: 13px;
+        }
+
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .presente-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .presente-checkbox:checked {
+            accent-color: #4CAF50;
+        }
+
+        .stats-section {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #999;
+        }
+
+        .actions-section {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-delete {
+            background: #FFB74D;
+            color: white;
+            padding: 4px 8px;
+            font-size: 11px;
+            min-width: auto;
+            width: auto;
+        }
+
+        .btn-delete:hover {
+            background: #FF9800;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .btn-save-row {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .btn-save-row:hover {
+            background: #45a049;
+        }
+
+        .btn-cancel-row {
+            background: #f44336;
+            color: white;
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .btn-cancel-row:hover {
+            background: #da190b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-modal-confirm {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-modal-confirm:hover {
+            background: #45a049;
+        }
+
+        .btn-modal-cancel {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-modal-cancel:hover {
+            background: #da190b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .day-buttons {
+                gap: 10px;
+            }
+
+            .day-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            /* Congelar las primeras columnas al hacer scroll horizontal */
+            th.sticky-col, td.sticky-col {
+                position: sticky;
+                z-index: 1;
+            }
+
+            th.sticky-col {
+                z-index: 3;
+                background: #6d5bba;
+            }
+
+            td.sticky-col {
+                background: white;
+            }
+
+            tbody tr:hover td.sticky-col {
+                background: #f5f5f5;
+            }
+
+            .sticky-col-1 {
+                left: 0;
+                width: 54px;
+                min-width: 54px;
+                max-width: 54px;
+            }
+
+            .sticky-col-2 {
+                left: 54px;
+                width: 110px;
+                min-width: 110px;
+                max-width: 110px;
+            }
+
+            .sticky-col-3 {
+                left: 164px;
+                width: 110px;
+                min-width: 110px;
+                max-width: 110px;
+                box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.3);
+            }
+
+            td.sticky-col-2, td.sticky-col-3,
+            th.sticky-col-2, th.sticky-col-3 {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="logo-toggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones"><span class="otro">Otro</span><span class="mundo">Mundo</span></span> - Asistencias</h1>
+
+        <div class="main-layout">
+            <div class="left-section">
+                <div class="date-selector">
+                    <label for="fecha">Fecha:</label>
+                    <input type="date" id="fecha" name="fecha">
+                </div>
+                <div class="user-badge">
+                    👤 Registrando como <strong id="usuarioActualLabel">—</strong>
+                    <button type="button" onclick="mostrarLogin()">Cambiar</button>
+                </div>
+                <div class="fecha-historial">
+                    <label for="historialFechas">Ir a fecha:</label>
+                    <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
+                        <option value="">Fechas registradas…</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="center-section">
+                <div class="day-buttons">
+                    <button class="day-btn lunes" data-dia="Lunes">Lunes</button>
+                    <button class="day-btn martes" data-dia="Martes">Martes</button>
+                    <button class="day-btn miercoles" data-dia="Miércoles">Miércoles</button>
+                    <button class="day-btn jueves" data-dia="Jueves">Jueves</button>
+                    <button class="day-btn viernes" data-dia="Viernes">Viernes</button>
+                </div>
+
+                <div class="stats-header">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="totalAlumnos">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Presentes:</span>
+                        <span class="stat-value" id="totalPresentes">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Ausentes:</span>
+                        <span class="stat-value" id="totalAusentes">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Asistencia:</span>
+                        <span class="stat-value" id="porcentajeAsistencia">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-section hidden-buttons" id="rightButtons">
+                <div class="import-section">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls">
+                    <button class="btn btn-import" onclick="solicitarClaveImportar()">
+                        📁 Importar Excel
+                    </button>
+                </div>
+
+                <div class="import-section">
+                    <button class="btn btn-delete-day" onclick="borrarTodosDelDia()">
+                        🗑️ Borrar Día
+                    </button>
+                </div>
+
+                <div class="import-section">
+                    <button class="btn btn-stats" onclick="mostrarEstadisticas()">
+                        📊 Estadísticas
+                    </button>
+                </div>
+
+                <div class="import-section">
+                    <button class="btn btn-export" onclick="exportarExcel()">
+                        📤 Exportar Excel
+                    </button>
+                </div>
+
+                <div class="import-section">
+                    <button class="btn btn-backup" onclick="exportarBackup()">
+                        💾 Respaldo
+                    </button>
+                </div>
+
+                <div class="import-section">
+                    <input type="file" id="backupFile" accept=".json,application/json">
+                    <button class="btn btn-restore" onclick="document.getElementById('backupFile').click()">
+                        ♻️ Restaurar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <input type="text" id="busqueda" placeholder="Buscar…" oninput="filtrarAlumnos()">
+            <button class="btn-add-icon" id="addButton" onclick="agregarAlumno()" title="Agregar alumno">➕👤</button>
+        </div>
+
+        <div id="consultaBanner" style="display:none; background:#fff3e0; color:#e65100; padding:10px 15px; border-radius:8px; margin-bottom:15px; text-align:center; font-weight:500;">
+            🔒 Modo consulta: la fecha seleccionada no corresponde a este día. Solo puedes ver la asistencia registrada, no marcar presentes.
+        </div>
+
+        <div class="table-container">
+            <table id="alumnosTable">
+                <thead>
+                    <tr>
+                        <th class="sticky-col sticky-col-1">Presente</th>
+                        <th class="sticky-col sticky-col-2">Apellido</th>
+                        <th class="sticky-col sticky-col-3">Nombre</th>
+                        <th>Programa</th>
+                        <th>Sala</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="alumnosBody">
+                    <tr>
+                        <td colspan="6" class="no-data">Selecciona un día para ver los alumnos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions-section">
+            <button class="btn btn-save" id="btnGuardar" onclick="guardarCambios()">💾 Guardar Cambios</button>
+        </div>
+    </div>
+
+    <!-- Modal de estadísticas -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarEstadisticas()">&times;</span>
+            <h2>📊 Estadísticas por día</h2>
+            <div id="statsContent"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" onclick="cerrarEstadisticas()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de login (nombre del usuario) -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>👤 Ingresar</h2>
+            <p>Escribe tu nombre. Quedará registrado quién marca o desmarca cada presente.</p>
+            <input type="text" id="loginInput" placeholder="Tu nombre" autocomplete="off" list="usuariosList"
+                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px;">
+            <datalist id="usuariosList"></datalist>
+            <div id="loginError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;">
+                ❌ Por favor ingresa un nombre
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" onclick="confirmarLogin()">Ingresar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarModal()">&times;</span>
+            <h2 id="modalTitle">Mensaje</h2>
+            <p id="modalMessage">Contenido del mensaje</p>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" id="modalConfirm">Confirmar</button>
+                <button class="btn btn-modal-cancel" id="modalCancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para clave de importación -->
+    <div id="claveModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarClaveModal()">&times;</span>
+            <h2>Clave requerida</h2>
+            <p>Ingresa la clave para importar el Excel:</p>
+            <input type="password" id="claveInput" placeholder="Clave" autocomplete="off"
+                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px;">
+            <div id="claveError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;">
+                ❌ Clave inválida
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" onclick="validarClave()">Validar</button>
+                <button class="btn btn-modal-cancel" onclick="cerrarClaveModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SheetJS con soporte de estilos (lee y escribe Excel, permite colorear celdas) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
