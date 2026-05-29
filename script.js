@@ -413,86 +413,10 @@ function setFiltroAsistencia(filtro) {
     aplicarFiltroAsistencia();
 }
 
-// Mostrar estadísticas
-function mostrarEstadisticas() {
-    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+// Las estadísticas ahora se manejan en estadisticas.js (panel completo con
+// tabla y gráfico). Allí se definen mostrarEstadisticas() y cerrarEstadisticas().
 
-    // --- Total de alumnos: POR DÍA DE LA SEMANA ---
-    const totales = {};
-    dias.forEach(d => { totales[d] = 0; });
-    alumnosData.forEach(a => {
-        if (totales[a.dia_semana] !== undefined) {
-            totales[a.dia_semana]++;
-        }
-    });
 
-    // Día de la semana con más alumnos en el listado
-    let maxAlumnos = { texto: null, valor: -1 };
-    dias.forEach(d => {
-        if (totales[d] > maxAlumnos.valor) {
-            maxAlumnos = { texto: d, valor: totales[d] };
-        }
-    });
-
-    // --- Presentes y ausentes: POR FECHA ---
-    // Presentes por fecha (registros con presente === 1)
-    const presentesPorFecha = {};
-    const fechasSet = new Set();
-    registrosAsistencia.forEach(r => {
-        fechasSet.add(r.fecha);
-        if (r.presente === 1) {
-            presentesPorFecha[r.fecha] = (presentesPorFecha[r.fecha] || 0) + 1;
-        }
-    });
-
-    // Recorrer fechas ordenadas; ausentes = total del día de esa fecha - presentes
-    const fechas = Array.from(fechasSet).sort();
-    let maxPresentes = { fecha: null, valor: -1 };
-    let maxAusentes = { fecha: null, valor: -1 };
-    fechas.forEach(f => {
-        const pres = presentesPorFecha[f] || 0;
-        const totalDia = totales[obtenerDiaSemana(f)] || 0;
-        const aus = Math.max(0, totalDia - pres);
-        if (pres > maxPresentes.valor) maxPresentes = { fecha: f, valor: pres };
-        if (aus > maxAusentes.valor) maxAusentes = { fecha: f, valor: aus };
-    });
-
-    // Formatear fecha ISO -> "Día dd/mm" (ej. "Jueves 28/05")
-    function fechaConDia(iso) {
-        const p = iso.split('-');
-        return `${obtenerDiaSemana(iso)} ${p[2]}/${p[1]}`;
-    }
-
-    // Construir una fila de resultado
-    function fila(etiqueta, texto, valor) {
-        if (!texto || valor <= 0) {
-            return `<li><span class="stats-label">${etiqueta}</span><span class="stats-day">Sin datos</span></li>`;
-        }
-        return `<li>
-            <span class="stats-label">${etiqueta}</span>
-            <span><span class="stats-day">${texto}</span><span class="stats-count">(${valor})</span></span>
-        </li>`;
-    }
-
-    const html = `
-        <ul class="stats-list">
-            ${fila('Mayor cantidad de alumnos:', maxAlumnos.texto, maxAlumnos.valor)}
-            ${fila('Mayor cantidad de presentes:', maxPresentes.fecha ? fechaConDia(maxPresentes.fecha) : null, maxPresentes.valor)}
-            ${fila('Mayor cantidad de ausentes:', maxAusentes.fecha ? fechaConDia(maxAusentes.fecha) : null, maxAusentes.valor)}
-        </ul>
-        <p style="font-size:12px; color:#999; margin:0;">
-            "Alumnos" es por día de la semana. "Presentes" y "ausentes" corresponden a la fecha con mayor valor.
-        </p>
-    `;
-
-    document.getElementById('statsContent').innerHTML = html;
-    document.getElementById('statsModal').style.display = 'block';
-}
-
-// Cerrar modal de estadísticas
-function cerrarEstadisticas() {
-    document.getElementById('statsModal').style.display = 'none';
-}
 
 // Actualizar el desplegable "Ir a fecha" con las fechas que tienen registros
 function actualizarSelectorFechas() {

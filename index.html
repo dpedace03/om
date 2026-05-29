@@ -351,6 +351,95 @@
             max-width: 200px;
         }
 
+        /* ===== Panel de estadísticas ===== */
+        .stats-modal-content {
+            max-width: 920px;
+            width: 95%;
+            margin: 4% auto;
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+
+        .stats-menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .stats-chip {
+            border: 1px solid #d6ccea;
+            background: #f4f0fb;
+            color: #5e35b1;
+            border-radius: 16px;
+            padding: 5px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .stats-chip:hover { background: #e9e1f7; }
+
+        .stats-chip.activo {
+            background: #667eea;
+            border-color: #667eea;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .stats-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .stats-toolbar > strong { font-size: 16px; color: #333; }
+
+        .stats-toggle { display: inline-flex; border: 1px solid #d6ccea; border-radius: 6px; overflow: hidden; }
+
+        .stats-tg {
+            border: none;
+            background: #fff;
+            color: #5e35b1;
+            padding: 5px 14px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .stats-tg.activo { background: #667eea; color: #fff; font-weight: 600; }
+
+        .stats-nota { font-size: 12px; color: #999; margin: 0 0 12px 0; }
+
+        .stats-tabla-wrap { overflow-x: auto; }
+
+        .stats-tabla {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .stats-tabla th, .stats-tabla td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-tabla th {
+            background: #f4f0fb;
+            color: #5e35b1;
+            position: sticky;
+            top: 0;
+        }
+
+        .stats-tabla tbody tr:nth-child(even) { background: #fafafa; }
+
+        #statsCanvasWrap { position: relative; height: 360px; }
+
+        .stats-vacio { color: #777; font-size: 14px; padding: 20px 0; text-align: center; }
+
         .stats-list {
             list-style: none;
             padding: 0;
@@ -1059,9 +1148,9 @@
 
     <!-- Modal de estadísticas -->
     <div id="statsModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content stats-modal-content">
             <span class="modal-close" onclick="cerrarEstadisticas()">&times;</span>
-            <h2>📊 Estadísticas por día</h2>
+            <h2>📊 Estadísticas</h2>
             <div id="statsContent"></div>
             <div class="modal-buttons">
                 <button class="btn btn-modal-confirm" onclick="cerrarEstadisticas()">Cerrar</button>
@@ -1129,9 +1218,8 @@
         // Los encontrás en Supabase -> Project Settings -> API:
         //   - "Project URL"            -> SUPABASE_URL
         //   - "anon public" (API Key)  -> SUPABASE_ANON_KEY
-        const SUPABASE_URL = 'https://ifnvndqudynyngeuiytd.supabase.co';
-
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmbnZuZHF1ZHlueW5nZXVpeXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjY2MzIsImV4cCI6MjA5NTY0MjYzMn0.s7t8X9GHk-VqHIP9g7XcHgXtSY344ygiwVDGyZkwvnI';
+        const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU-CLAVE-ANON-PUBLIC';
 
         // Crear el cliente (queda disponible como window.supabaseClient)
         window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1140,5 +1228,9 @@
     <!-- Capa de datos (reemplaza a localStorage) -->
     <script src="supabase-data.js"></script>
     <script src="script.js"></script>
+
+    <!-- Gráficos para el panel de estadísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="estadisticas.js"></script>
 </body>
 </html>
