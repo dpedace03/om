@@ -88,11 +88,13 @@
             flex-wrap: wrap;
         }
 
-        .left-section {
-            flex: 0 0 auto;
-            position: absolute;
-            left: 30px;
-            top: 30px;
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
         }
 
         .center-section {
@@ -142,10 +144,13 @@
         }
 
         .date-selector input[type="date"] {
-            padding: 6px 12px;
-            border: 2px solid #ddd;
+            padding: 4px 10px;
+            border: 1px solid #d6ccea;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            background: #ede7f6;
         }
 
         .stats-header {
@@ -305,12 +310,11 @@
             50% { box-shadow: 0 0 0 6px rgba(255, 152, 0, 0); }
         }
 
-        /* Selector "Ir a fecha" */
+        /* Selector "Ir a fecha": oculto (display:none). Se conserva en el DOM por si se reactiva. */
         .fecha-historial {
-            display: flex;
+            display: none;
             align-items: center;
             gap: 8px;
-            margin-top: 8px;
         }
 
         .fecha-historial label {
@@ -763,7 +767,6 @@
                 gap: 12px;
             }
 
-            .left-section,
             .center-section {
                 width: 100%;
             }
@@ -909,25 +912,25 @@
 </head>
 <body>
     <div class="container">
+        <div class="top-bar">
+            <div class="date-selector">
+                <input type="date" id="fecha" name="fecha">
+            </div>
+            <div class="user-badge">
+                👤 <span class="badge-label">Está registrando </span><strong id="usuarioActualLabel">—</strong>
+                <button type="button" onclick="mostrarLogin()">Cambiar</button>
+            </div>
+            <!-- Combo "Ir a fecha": oculto (display:none) por si se quiere reactivar en el futuro -->
+            <div class="fecha-historial">
+                <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
+                    <option value="">Fechas registradas…</option>
+                </select>
+            </div>
+        </div>
+
         <h1><span class="logo-toggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones"><span class="otro">Otro</span><span class="mundo">Mundo</span></span> - Asistencias</h1>
 
         <div class="main-layout">
-            <div class="left-section">
-                <div class="date-selector">
-                    <label for="fecha">Fecha:</label>
-                    <input type="date" id="fecha" name="fecha">
-                </div>
-                <div class="user-badge">
-                    👤 <span class="badge-label">Registrando como </span><strong id="usuarioActualLabel">—</strong>
-                    <button type="button" onclick="mostrarLogin()">Cambiar</button>
-                </div>
-                <div class="fecha-historial">
-                    <label for="historialFechas">Ir a fecha:</label>
-                    <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
-                        <option value="">Fechas registradas…</option>
-                    </select>
-                </div>
-            </div>
 
             <div class="center-section">
                 <div class="day-buttons">
