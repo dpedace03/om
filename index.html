@@ -501,6 +501,7 @@
 
         .table-container {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
         }
 
@@ -724,25 +725,115 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+
             .container {
-                padding: 15px;
+                padding: 15px 12px;
             }
 
             h1 {
-                font-size: 1.8em;
+                font-size: 1.6em;
+            }
+
+            /* Señalar que el título es tocable para abrir las opciones */
+            .logo-toggle {
+                text-decoration: underline dotted;
+                text-underline-offset: 4px;
+            }
+
+            /* Apilar las secciones en una columna */
+            .main-layout {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .left-section,
+            .center-section {
+                width: 100%;
+            }
+
+            .fecha-historial select {
+                flex: 1;
+                max-width: none;
             }
 
             .day-buttons {
-                gap: 10px;
+                gap: 8px;
             }
 
             .day-btn {
-                padding: 10px 20px;
+                padding: 9px 16px;
                 font-size: 14px;
             }
 
+            .stats-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .stat-item {
+                padding: 5px 10px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            /* Panel de opciones: centrado, debajo del título y a todo el ancho */
+            .right-section {
+                top: 56px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: 92%;
+                max-width: 360px;
+            }
+
+            .import-section {
+                width: 100%;
+            }
+
+            .btn-import,
+            .btn-delete-day,
+            .btn-stats,
+            .btn-export,
+            .btn-backup,
+            .btn-restore {
+                width: 100%;
+            }
+
+            /* Buscador más ancho en celular */
+            .search-section input[type="text"] {
+                flex: 1 1 auto;
+                max-width: none;
+            }
+
+            /* Fuente 16px en los campos: evita el zoom automático en iOS */
+            .search-section input[type="text"],
+            .date-selector input[type="date"],
+            .fecha-historial select,
+            #loginInput,
+            #claveInput {
+                font-size: 16px;
+            }
+
+            /* Botón Guardar a todo el ancho */
+            .btn-save {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Checkbox más grande para tocar con el dedo */
+            .presente-checkbox {
+                width: 22px;
+                height: 22px;
+            }
+
             th, td {
-                padding: 10px;
+                padding: 9px 8px;
                 font-size: 14px;
             }
 
@@ -767,23 +858,23 @@
 
             .sticky-col-1 {
                 left: 0;
-                width: 54px;
-                min-width: 54px;
-                max-width: 54px;
+                width: 48px;
+                min-width: 48px;
+                max-width: 48px;
             }
 
             .sticky-col-2 {
-                left: 54px;
-                width: 110px;
-                min-width: 110px;
-                max-width: 110px;
+                left: 48px;
+                width: 96px;
+                min-width: 96px;
+                max-width: 96px;
             }
 
             .sticky-col-3 {
-                left: 164px;
-                width: 110px;
-                min-width: 110px;
-                max-width: 110px;
+                left: 144px;
+                width: 96px;
+                min-width: 96px;
+                max-width: 96px;
                 box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.3);
             }
 
@@ -792,6 +883,13 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+
+            /* Modales */
+            .modal-content {
+                margin: 12% auto;
+                padding: 20px;
+                width: 92%;
             }
         }
     </style>
