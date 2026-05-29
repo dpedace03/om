@@ -352,6 +352,52 @@
         }
 
         /* ===== Panel de estadísticas ===== */
+        /* El panel de estadísticas se muestra a pantalla completa (no como popup) */
+        #statsModal {
+            background-color: #fff;
+            overflow-y: auto;
+        }
+
+        #statsModal .stats-modal-content {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 1100px;
+            min-height: 100vh;
+            max-height: none;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 22px 28px 48px;
+            overflow: visible;
+            animation: none;
+        }
+
+        #statsModal .modal-close {
+            position: fixed;
+            top: 12px;
+            right: 18px;
+            z-index: 1002;
+            color: #777;
+            background: #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        #statsModal #statsCanvasWrap {
+            height: 460px;
+        }
+
+        #statsModal .stats-menu {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 8px 0;
+            z-index: 5;
+        }
+
         .stats-modal-content {
             max-width: 920px;
             width: 95%;
@@ -1218,9 +1264,14 @@
         // Los encontrás en Supabase -> Project Settings -> API:
         //   - "Project URL"            -> SUPABASE_URL
         //   - "anon public" (API Key)  -> SUPABASE_ANON_KEY
+        const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU-CLAVE-ANON-PUBLIC';
+
         const SUPABASE_URL = 'https://ifnvndqudynyngeuiytd.supabase.co';
 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmbnZuZHF1ZHlueW5nZXVpeXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjY2MzIsImV4cCI6MjA5NTY0MjYzMn0.s7t8X9GHk-VqHIP9g7XcHgXtSY344ygiwVDGyZkwvnI';
+
+
 
 
         // Crear el cliente (queda disponible como window.supabaseClient)
