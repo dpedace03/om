@@ -29,31 +29,71 @@ const CLAVE_IMPORTAR = 'OMOM';
 
 // Mostrar el modal de login
 function mostrarLogin() {
-    const input = document.getElementById('loginInput');
+    const modal = document.getElementById('loginModal');
     document.getElementById('loginError').style.display = 'none';
-    input.value = usuarioActual || '';
-    document.getElementById('loginModal').style.display = 'block';
-    input.focus();
+    if (modal) modal.style.display = 'block';
+    const email = document.getElementById('loginEmail');
+    if (email) email.focus();
 }
 
-// Confirmar el nombre ingresado
-function confirmarLogin() {
-    const nombre = document.getElementById('loginInput').value.trim();
-    if (!nombre) {
-        document.getElementById('loginError').style.display = 'block';
+// Tomar el nombre a mostrar a partir de la sesión (display_name o email)
+function setUsuarioDesdeSesion(user) {
+    const nombre = (user && user.user_metadata && user.user_metadata.display_name)
+        || (user ? user.email : '');
+    usuarioActual = nombre || '';
+    const lbl = document.getElementById('usuarioActualLabel');
+    if (lbl) lbl.textContent = usuarioActual || '—';
+}
+
+// Iniciar sesión con email + contraseña
+async function confirmarLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+
+    if (!email || !password) {
+        errBox.textContent = '❌ Ingresá tu email y contraseña';
+        errBox.style.display = 'block';
         return;
     }
-    usuarioActual = nombre;
-    // El nombre propio se recuerda en este dispositivo (quién soy acá)
-    localStorage.setItem(USUARIO_KEY, usuarioActual);
-    document.getElementById('usuarioActualLabel').textContent = usuarioActual;
 
-    // Registrar el nombre en la lista compartida (para el autocompletar de todos)
-    DB.agregarUsuario(usuarioActual)
-        .then(() => poblarUsuariosDatalist())
-        .catch(e => console.error('No se pudo guardar el usuario:', e));
+    const btn = document.getElementById('btnIngresar');
+    if (btn) btn.disabled = true;
+    try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
 
-    document.getElementById('loginModal').style.display = 'none';
+        errBox.style.display = 'none';
+        document.getElementById('loginPassword').value = '';
+        setUsuarioDesdeSesion(data.user);
+        document.getElementById('loginModal').style.display = 'none';
+        await iniciarApp();
+    } catch (e) {
+        console.error('Error de inicio de sesión:', e);
+        errBox.textContent = '❌ Email o contraseña incorrectos';
+        errBox.style.display = 'block';
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+// Cerrar sesión
+async function cerrarSesion() {
+    if (cambiosPendientes.size > 0) {
+        mostrarModal('Hay cambios sin guardar', 'Guardá primero con 💾 Guardar Cambios antes de cerrar sesión.');
+        return;
+    }
+    try { await window.supabaseClient.auth.signOut(); } catch (e) { console.error(e); }
+
+    // Limpiar el estado en pantalla y volver al login
+    alumnosData = [];
+    registrosAsistencia = [];
+    usuarioActual = '';
+    const lbl = document.getElementById('usuarioActualLabel');
+    if (lbl) lbl.textContent = '—';
+    const tbody = document.getElementById('alumnosBody');
+    if (tbody) tbody.innerHTML = '';
+    mostrarLogin();
 }
 
 // Poblar el desplegable de nombres conocidos (desde la base compartida)
@@ -115,23 +155,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const rightButtons = document.getElementById('rightButtons');
     if (rightButtons) rightButtons.style.display = 'none';
 
-    // Cargar datos desde Supabase (base compartida)
-    await cargarDesdeSupabase();
-
-    // Seleccionar día por default según fecha actual
-    const fechaActual = fechaInput.value;
-    const diaActual = obtenerDiaSemana(fechaActual);
-
-    // Si es sábado o domingo, seleccionar lunes
-    let diaSeleccionado = diaActual;
-    if (diaActual === 'Sábado' || diaActual === 'Domingo') {
-        diaSeleccionado = 'Lunes';
-    }
-
-    const diaBtn = document.querySelector(`.day-btn[data-dia="${diaSeleccionado}"]`);
-    if (diaBtn) {
-        seleccionarDia(diaSeleccionado, diaBtn);
-    }
+    // La carga de datos y la selección de día ahora ocurren en iniciarApp(),
+    // recién DESPUÉS de iniciar sesión (más abajo).
 
     // Event listener para cambio de fecha
     fechaInput.addEventListener('change', function() {
@@ -189,27 +214,55 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
-    // Confirmar login al presionar Enter en el campo de nombre
-    document.getElementById('loginInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            confirmarLogin();
+    // Confirmar login al presionar Enter en email o contraseña
+    ['loginEmail', 'loginPassword'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmarLogin();
+                }
+            });
         }
     });
 
-    // Poblar el desplegable de nombres y el selector de fechas registradas
-    poblarUsuariosDatalist();
-    actualizarSelectorFechas();
     actualizarBotonGuardar();
 
-    // Cargar usuario previo (si existe) y solicitar login inicial
-    const usuarioGuardado = localStorage.getItem(USUARIO_KEY);
-    if (usuarioGuardado) {
-        usuarioActual = usuarioGuardado;
-        document.getElementById('usuarioActualLabel').textContent = usuarioActual;
+    // Verificar si ya hay una sesión activa; si no, pedir login
+    try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (session) {
+            setUsuarioDesdeSesion(session.user);
+            await iniciarApp();
+        } else {
+            mostrarLogin();
+        }
+    } catch (e) {
+        console.error('Error al verificar la sesión:', e);
+        mostrarLogin();
     }
-    mostrarLogin();
 });
+
+// Cargar datos y preparar la vista (se llama recién después de iniciar sesión)
+async function iniciarApp() {
+    const ok = await cargarDesdeSupabase();
+    if (!ok) return;
+
+    // Seleccionar día por default según la fecha actual
+    const fechaInput = document.getElementById('fecha');
+    const diaActual = obtenerDiaSemana(fechaInput.value);
+    let diaInicial = diaActual;
+    if (diaActual === 'Sábado' || diaActual === 'Domingo') {
+        diaInicial = 'Lunes';
+    }
+    const diaBtn = document.querySelector(`.day-btn[data-dia="${diaInicial}"]`);
+    if (diaBtn) {
+        seleccionarDia(diaInicial, diaBtn);
+    }
+
+    actualizarSelectorFechas();
+}
 
 // Cargar datos desde Supabase (base compartida en la nube)
 async function cargarDesdeSupabase() {

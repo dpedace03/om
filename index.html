@@ -938,7 +938,7 @@
             </div>
             <div class="user-badge">
                 👤 <span class="badge-label">Está registrando </span><strong id="usuarioActualLabel">—</strong>
-                <button type="button" onclick="mostrarLogin()">Cambiar</button>
+                <button type="button" onclick="cerrarSesion()">Cerrar sesión</button>
             </div>
             <button type="button" class="btn-refresh" id="btnRefrescar" onclick="refrescarDatos()" title="Traer los últimos datos de la nube">🔄 Actualizar</button>
             <!-- Combo "Ir a fecha": oculto (display:none) por si se quiere reactivar en el futuro -->
@@ -1072,16 +1072,17 @@
     <!-- Modal de login (nombre del usuario) -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
-            <h2>👤 Ingresar</h2>
-            <p>Escribe tu nombre. Quedará registrado quién marca o desmarca cada presente.</p>
-            <input type="text" id="loginInput" placeholder="Tu nombre" autocomplete="off" list="usuariosList"
-                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px;">
-            <datalist id="usuariosList"></datalist>
+            <h2>🔒 Iniciar sesión</h2>
+            <p>Ingresá con tu email y contraseña. Solo personas autorizadas pueden acceder.</p>
+            <input type="email" id="loginEmail" placeholder="Email" autocomplete="username"
+                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
+            <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password"
+                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
             <div id="loginError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;">
-                ❌ Por favor ingresa un nombre
+                ❌ Email o contraseña incorrectos
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-modal-confirm" onclick="confirmarLogin()">Ingresar</button>
+                <button class="btn btn-modal-confirm" id="btnIngresar" onclick="confirmarLogin()">Ingresar</button>
             </div>
         </div>
     </div>
@@ -1128,8 +1129,8 @@
         // Los encontrás en Supabase -> Project Settings -> API:
         //   - "Project URL"            -> SUPABASE_URL
         //   - "anon public" (API Key)  -> SUPABASE_ANON_KEY
-        const SUPABASE_URL = 'https://ifnvndqudynyngeuiytd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmbnZuZHF1ZHlueW5nZXVpeXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjY2MzIsImV4cCI6MjA5NTY0MjYzMn0.s7t8X9GHk-VqHIP9g7XcHgXtSY344ygiwVDGyZkwvnI';
+        const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU-CLAVE-ANON-PUBLIC';
 
         // Crear el cliente (queda disponible como window.supabaseClient)
         window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
