@@ -57,6 +57,12 @@ async function confirmarLogin() {
         return;
     }
 
+    if (!window.supabaseClient || !window.supabaseClient.auth) {
+        errBox.textContent = '❌ No se pudo conectar con Supabase. Revisá config.js (tus credenciales) y que haya internet.';
+        errBox.style.display = 'block';
+        return;
+    }
+
     const btn = document.getElementById('btnIngresar');
     if (btn) btn.disabled = true;
     try {
