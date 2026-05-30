@@ -102,6 +102,12 @@ const DB = {
         if (error) throw error;
     },
 
+    // ---------- Borrar toda la asistencia de una fecha (blanqueo del día) ----------
+    async borrarAsistenciaDeFecha(fecha) {
+        const { error } = await _sb().from('asistencia').delete().eq('fecha', fecha);
+        if (error) throw error;
+    },
+
     // ---------- Usuarios (lista de nombres para autocompletar) ----------
     async listarUsuarios() {
         const { data, error } = await _sb()
