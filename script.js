@@ -698,13 +698,19 @@ function filtrarAlumnos() {
 
 // Agregar nuevo alumno
 function agregarAlumno() {
+    abrirFilaAlta('', '', null);
+}
+
+// Abre una fila editable de alta. Si movingId != null, es un "cambio de día"
+// (viene precargado apellido y nombre, y al guardar se elimina el alumno original).
+function abrirFilaAlta(apellidoPre, nombrePre, movingId) {
     if (!diaSeleccionado) {
         alert('Por favor selecciona un día primero');
         return;
     }
-    
+    _movingFromId = (movingId != null) ? movingId : null;
+
     const tbody = document.getElementById('alumnosBody');
-    const fecha = document.getElementById('fecha').value;
 
     // Opciones existentes (distintas) para los combos de Programa y Sala
     const valoresUnicos = (campo) => [...new Set(
@@ -713,14 +719,17 @@ function agregarAlumno() {
     const progOpts = valoresUnicos('programa').map(v => `<option value="${escaparHTML(v)}"></option>`).join('');
     const salaOpts = valoresUnicos('sala').map(v => `<option value="${escaparHTML(v)}"></option>`).join('');
 
-    // Agregar fila en blanco para edición
+    const apeVal = escaparHTML(apellidoPre || '');
+    const nomVal = escaparHTML(nombrePre || '');
+
+    // Agregar fila en blanco (o precargada) para edición
     const nuevaFila = document.createElement('tr');
     nuevaFila.innerHTML = `
         <td>
             <input type="checkbox" class="presente-checkbox">
         </td>
-        <td><input type="text" class="edit-input" placeholder="Apellido" id="nuevoApellido"></td>
-        <td><input type="text" class="edit-input" placeholder="Nombre" id="nuevoNombre"></td>
+        <td><input type="text" class="edit-input" placeholder="Apellido" id="nuevoApellido" value="${apeVal}"></td>
+        <td><input type="text" class="edit-input" placeholder="Nombre" id="nuevoNombre" value="${nomVal}"></td>
         <td>
             <input type="text" class="edit-input" placeholder="Programa" id="nuevoPrograma" list="listaProgramas" autocomplete="off">
             <datalist id="listaProgramas">${progOpts}</datalist>
@@ -736,6 +745,12 @@ function agregarAlumno() {
     `;
 
     tbody.insertBefore(nuevaFila, tbody.firstChild);
+
+    // Si es un cambio de día (nombre ya cargado), enfocar Programa; si no, Apellido
+    const foco = (movingId != null)
+        ? document.getElementById('nuevoPrograma')
+        : document.getElementById('nuevoApellido');
+    if (foco) foco.focus();
 }
 
 // Guardar nuevo alumno
@@ -750,8 +765,9 @@ function guardarNuevoAlumno() {
         return;
     }
 
-    // Validar que el alumno no exista en ningún día
+    // Validar que el alumno no exista en ningún día (excepto el original si es un cambio de día)
     const alumnoExistente = alumnosData.find(a =>
+        a.id !== _movingFromId &&
         a.apellido.toLowerCase() === apellido.toLowerCase() &&
         a.nombre.toLowerCase() === nombre.toLowerCase()
     );
@@ -774,13 +790,32 @@ function guardarNuevoAlumno() {
         dia_semana: diaSeleccionado
     };
 
+    const movido = _movingFromId; // id del alumno original (si es un cambio de día)
+
     DB.insertarAlumno(nuevoAlumno)
-        .then(creado => {
+        .then(async creado => {
             nuevoAlumno.id = creado.id;
             alumnosData.push(nuevoAlumno);
-            mostrarModal('Éxito', 'Alumno agregado exitosamente', () => {
-                cargarAlumnos(diaSeleccionado);
-            });
+
+            if (movido != null) {
+                // Cambio de día: eliminar al alumno original (y su asistencia)
+                try {
+                    await DB.eliminarAlumno(movido);
+                    alumnosData = alumnosData.filter(a => a.id !== movido);
+                    registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== movido);
+                } catch (e) {
+                    console.error('Error al eliminar el alumno original tras el cambio de día:', e);
+                }
+                _movingFromId = null;
+                actualizarSelectorFechas();
+                mostrarModal('Éxito', `Se cambió a ${nuevoAlumno.apellido}, ${nuevoAlumno.nombre} al día ${nuevoAlumno.dia_semana}.`, () => {
+                    cargarAlumnos(diaSeleccionado);
+                });
+            } else {
+                mostrarModal('Éxito', 'Alumno agregado exitosamente', () => {
+                    cargarAlumnos(diaSeleccionado);
+                });
+            }
         })
         .catch(e => {
             console.error('Error al agregar alumno:', e);
@@ -790,6 +825,7 @@ function guardarNuevoAlumno() {
 
 // Cancelar agregar alumno
 function cancelarNuevoAlumno(boton) {
+    _movingFromId = null;
     const fila = boton.closest('tr');
     fila.remove();
 }
@@ -933,6 +969,7 @@ async function blanquearDia() {
 
 // ===== Cambiar de día a un alumno =====
 let _alumnoCambioDia = null;
+let _movingFromId = null;
 
 function canonizarDia(texto) {
     const t = (texto || '').toLowerCase().trim()
@@ -962,7 +999,7 @@ function cerrarCambioDia() {
     _alumnoCambioDia = null;
 }
 
-async function confirmarCambioDia() {
+function confirmarCambioDia() {
     const alumno = alumnosData.find(a => a.id === _alumnoCambioDia);
     const err = document.getElementById('cambioDiaError');
     if (!alumno) { cerrarCambioDia(); return; }
@@ -979,35 +1016,16 @@ async function confirmarCambioDia() {
         return;
     }
 
-    const btn = document.getElementById('cambioDiaConfirm');
-    if (btn) btn.disabled = true;
+    const origId = alumno.id;
+    const apellido = alumno.apellido;
+    const nombre = alumno.nombre;
+    cerrarCambioDia();
 
-    const oldId = alumno.id;
-    // En el nuevo día solo se conservan apellido y nombre (programa y sala van a mano)
-    const nuevo = { apellido: alumno.apellido, nombre: alumno.nombre, programa: '', sala: '', dia_semana: dia };
-
-    try {
-        // Primero se crea en el nuevo día y luego se elimina del actual
-        const creado = await DB.insertarAlumno(nuevo);
-        nuevo.id = creado.id;
-        await DB.eliminarAlumno(oldId);
-
-        // Actualizar memoria
-        alumnosData = alumnosData.filter(a => a.id !== oldId);
-        registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== oldId);
-        alumnosData.push(nuevo);
-
-        cerrarCambioDia();
-        actualizarSelectorFechas();
-        if (diaSeleccionado) cargarAlumnos(diaSeleccionado);
-        setTimeout(() => mostrarModal('Éxito', `Se cambió a ${nuevo.apellido}, ${nuevo.nombre} al día ${dia}. Acordate de cargar Programa y Sala a mano.`), 0);
-    } catch (e) {
-        console.error('Error al cambiar de día:', e);
-        err.textContent = '❌ No se pudo cambiar de día en la nube. Revisá la conexión e intentá de nuevo.';
-        err.style.display = 'block';
-    } finally {
-        if (btn) btn.disabled = false;
-    }
+    // Cambiar a la vista del día destino y abrir una fila tipo "Agregar"
+    // precargada con apellido y nombre (Programa y Sala se cargan a mano).
+    const btn = document.querySelector(`.day-btn[data-dia="${dia}"]`);
+    if (btn) seleccionarDia(dia, btn);
+    abrirFilaAlta(apellido, nombre, origId);
 }
 
 // Marcar cambio en checkbox
