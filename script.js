@@ -830,6 +830,85 @@ function cancelarNuevoAlumno(boton) {
     fila.remove();
 }
 
+// ===== Editar datos del alumno (apellido, nombre, programa, sala) =====
+function editarAlumno(id) {
+    const alumno = alumnosData.find(a => a.id === id);
+    if (!alumno) return;
+    const checkbox = document.querySelector(`.presente-checkbox[data-id="${id}"]`);
+    const fila = checkbox ? checkbox.closest('tr') : null;
+    if (!fila) return;
+
+    // Opciones existentes para los combos de Programa y Sala
+    const valoresUnicos = (campo) => [...new Set(
+        alumnosData.map(a => (a[campo] || '').trim()).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+    const progOpts = valoresUnicos('programa').map(v => `<option value="${escaparHTML(v)}"></option>`).join('');
+    const salaOpts = valoresUnicos('sala').map(v => `<option value="${escaparHTML(v)}"></option>`).join('');
+
+    fila.innerHTML = `
+        <td><input type="checkbox" class="presente-checkbox" disabled></td>
+        <td><input type="text" class="edit-input" id="editApellido_${id}" value="${escaparHTML(alumno.apellido)}"></td>
+        <td><input type="text" class="edit-input" id="editNombre_${id}" value="${escaparHTML(alumno.nombre)}"></td>
+        <td>
+            <input type="text" class="edit-input" id="editPrograma_${id}" list="listaProgEdit_${id}" autocomplete="off" value="${escaparHTML(alumno.programa || '')}">
+            <datalist id="listaProgEdit_${id}">${progOpts}</datalist>
+        </td>
+        <td>
+            <input type="text" class="edit-input" id="editSala_${id}" list="listaSalaEdit_${id}" autocomplete="off" value="${escaparHTML(alumno.sala || '')}">
+            <datalist id="listaSalaEdit_${id}">${salaOpts}</datalist>
+        </td>
+        <td>
+            <button class="btn btn-save-row" onclick="guardarEdicionAlumno(${id})">Guardar</button>
+            <button class="btn btn-cancel-row" onclick="cancelarEdicionAlumno()">Cancelar</button>
+        </td>
+    `;
+    const foco = document.getElementById(`editApellido_${id}`);
+    if (foco) foco.focus();
+}
+
+function guardarEdicionAlumno(id) {
+    const alumno = alumnosData.find(a => a.id === id);
+    if (!alumno) return;
+
+    const apellido = document.getElementById(`editApellido_${id}`).value.trim();
+    const nombre = document.getElementById(`editNombre_${id}`).value.trim();
+    const programa = document.getElementById(`editPrograma_${id}`).value.trim();
+    const sala = document.getElementById(`editSala_${id}`).value.trim();
+
+    if (!apellido || !nombre) {
+        mostrarModal('Datos incompletos', 'Por favor ingresá Apellido y Nombre.');
+        return;
+    }
+
+    // Validar que el alumno con ese apellido y nombre no esté ya en otro día
+    const dup = alumnosData.find(a =>
+        a.id !== id &&
+        a.apellido.toLowerCase() === apellido.toLowerCase() &&
+        a.nombre.toLowerCase() === nombre.toLowerCase()
+    );
+    if (dup) {
+        mostrarModal('Alumno duplicado', `${apellido} ${nombre} ya está en el día ${dup.dia_semana}. Cambiá los datos o cancelá.`);
+        return;
+    }
+
+    DB.actualizarAlumno(id, { apellido, nombre, programa, sala })
+        .then(() => {
+            alumno.apellido = apellido;
+            alumno.nombre = nombre;
+            alumno.programa = programa;
+            alumno.sala = sala;
+            mostrarModal('Éxito', 'Datos actualizados.', () => cargarAlumnos(diaSeleccionado));
+        })
+        .catch(e => {
+            console.error('Error al editar alumno:', e);
+            mostrarModal('Error', 'No se pudieron guardar los cambios en la nube. Revisá la conexión e intentá de nuevo.');
+        });
+}
+
+function cancelarEdicionAlumno() {
+    if (diaSeleccionado) cargarAlumnos(diaSeleccionado);
+}
+
 // Funciones para modal
 let modalCallback = null;
 
@@ -920,6 +999,7 @@ function renderizarAlumnos(alumnos) {
             <td>
                 <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
                 <button class="btn btn-changeday" onclick="cambiarDiaAlumno(${alumno.id})" title="Cambiar de día">🗓️</button>
+                <button class="btn btn-edit" onclick="editarAlumno(${alumno.id})" title="Editar datos">✏️</button>
                 <span class="marcado-por" title="${escaparHTML(tituloMarca)}">${marcadoPor ? escaparHTML(marcadoPor) : ''}</span>
             </td>
         </tr>

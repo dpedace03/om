@@ -74,6 +74,17 @@ const DB = {
         return data || [];
     },
 
+    // ---------- Actualizar datos de un alumno (apellido, nombre, programa, sala) ----------
+    async actualizarAlumno(id, campos) {
+        const { error } = await _sb().from('alumnos').update({
+            apellido: campos.apellido,
+            nombre: campos.nombre,
+            programa: campos.programa || '',
+            sala: campos.sala || ''
+        }).eq('id', id);
+        if (error) throw error;
+    },
+
     // ---------- Eliminar un alumno (la asistencia se borra en cascada) ----------
     async eliminarAlumno(id) {
         const { error } = await _sb().from('alumnos').delete().eq('id', id);
