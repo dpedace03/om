@@ -85,10 +85,12 @@ const DB = {
         if (error) throw error;
     },
 
-    // ---------- Eliminar un alumno (la asistencia se borra en cascada) ----------
+    // ---------- Eliminar un alumno (borra primero su asistencia, por si no hay cascada) ----------
     async eliminarAlumno(id) {
-        const { error } = await _sb().from('alumnos').delete().eq('id', id);
-        if (error) throw error;
+        const { error: e1 } = await _sb().from('asistencia').delete().eq('alumno_id', id);
+        if (e1) throw e1;
+        const { error: e2 } = await _sb().from('alumnos').delete().eq('id', id);
+        if (e2) throw e2;
     },
 
     // ---------- Eliminar todos los alumnos de uno o varios días ----------

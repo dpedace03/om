@@ -710,7 +710,6 @@ function abrirFilaAlta(apellidoPre, nombrePre, movingId) {
         alert('Por favor selecciona un día primero');
         return;
     }
-    _movingFromId = (movingId != null) ? movingId : null;
 
     const tbody = document.getElementById('alumnosBody');
 
@@ -723,6 +722,9 @@ function abrirFilaAlta(apellidoPre, nombrePre, movingId) {
 
     const apeVal = escaparHTML(apellidoPre || '');
     const nomVal = escaparHTML(nombrePre || '');
+
+    // El id a mover se incrusta en el botón Guardar (más robusto que una variable global)
+    const onGuardar = (movingId != null) ? `guardarNuevoAlumno(${movingId})` : `guardarNuevoAlumno()`;
 
     // Agregar fila en blanco (o precargada) para edición
     const nuevaFila = document.createElement('tr');
@@ -741,7 +743,7 @@ function abrirFilaAlta(apellidoPre, nombrePre, movingId) {
             <datalist id="listaSalas">${salaOpts}</datalist>
         </td>
         <td>
-            <button class="btn btn-save-row" onclick="guardarNuevoAlumno()">Guardar</button>
+            <button class="btn btn-save-row" onclick="${onGuardar}">Guardar</button>
             <button class="btn btn-cancel-row" onclick="cancelarNuevoAlumno(this)">Cancelar</button>
         </td>
     `;
@@ -755,8 +757,10 @@ function abrirFilaAlta(apellidoPre, nombrePre, movingId) {
     if (foco) foco.focus();
 }
 
-// Guardar nuevo alumno
-function guardarNuevoAlumno() {
+// Guardar nuevo alumno. Si se pasa "movido" (id), es un cambio de día:
+// al guardar se elimina ese alumno original.
+function guardarNuevoAlumno(movido) {
+    if (movido === undefined) movido = null;
     const apellido = document.getElementById('nuevoApellido').value.trim();
     const nombre = document.getElementById('nuevoNombre').value.trim();
     const programa = document.getElementById('nuevoPrograma').value.trim();
@@ -769,7 +773,7 @@ function guardarNuevoAlumno() {
 
     // Validar que el alumno no exista en ningún día (excepto el original si es un cambio de día)
     const alumnoExistente = alumnosData.find(a =>
-        a.id !== _movingFromId &&
+        a.id !== movido &&
         a.apellido.toLowerCase() === apellido.toLowerCase() &&
         a.nombre.toLowerCase() === nombre.toLowerCase()
     );
@@ -792,8 +796,6 @@ function guardarNuevoAlumno() {
         dia_semana: diaSeleccionado
     };
 
-    const movido = _movingFromId; // id del alumno original (si es un cambio de día)
-
     DB.insertarAlumno(nuevoAlumno)
         .then(async creado => {
             nuevoAlumno.id = creado.id;
@@ -803,12 +805,17 @@ function guardarNuevoAlumno() {
                 // Cambio de día: eliminar al alumno original (y su asistencia)
                 try {
                     await DB.eliminarAlumno(movido);
-                    alumnosData = alumnosData.filter(a => a.id !== movido);
-                    registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== movido);
                 } catch (e) {
                     console.error('Error al eliminar el alumno original tras el cambio de día:', e);
+                    // Revertir: borrar el recién creado para no dejar duplicado en dos días
+                    try { await DB.eliminarAlumno(nuevoAlumno.id); } catch (_) {}
+                    alumnosData = alumnosData.filter(a => a.id !== nuevoAlumno.id);
+                    mostrarModal('Error', 'No se pudo mover al alumno: no se logró quitarlo del día anterior. No se hicieron cambios. Revisá la conexión e intentá de nuevo.');
+                    return;
                 }
-                _movingFromId = null;
+                // Borrado OK: limpiar el original en memoria
+                alumnosData = alumnosData.filter(a => a.id !== movido);
+                registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== movido);
                 actualizarSelectorFechas();
                 mostrarModal('Éxito', `Se cambió a ${nuevoAlumno.apellido}, ${nuevoAlumno.nombre} al día ${nuevoAlumno.dia_semana}.`, () => {
                     cargarAlumnos(diaSeleccionado);
@@ -827,7 +834,6 @@ function guardarNuevoAlumno() {
 
 // Cancelar agregar alumno
 function cancelarNuevoAlumno(boton) {
-    _movingFromId = null;
     const fila = boton.closest('tr');
     fila.remove();
 }
@@ -1050,7 +1056,6 @@ async function blanquearDia() {
 
 // ===== Cambiar de día a un alumno =====
 let _alumnoCambioDia = null;
-let _movingFromId = null;
 
 function canonizarDia(texto) {
     const t = (texto || '').toLowerCase().trim()
@@ -1122,8 +1127,15 @@ function confirmarCambioDia() {
     // Cambiar a la vista del día destino y abrir una fila tipo "Agregar"
     // precargada con apellido y nombre (Programa y Sala se cargan a mano).
     const btn = document.querySelector(`.day-btn[data-dia="${dia}"]`);
-    if (btn) seleccionarDia(dia, btn);
-    abrirFilaAlta(apellido, nombre, origId);
+    if (btn) {
+        seleccionarDia(dia, btn);
+    } else {
+        diaSeleccionado = dia;
+        cargarAlumnos(dia);
+    }
+    // El re-render del día es diferido (~300ms). Abrimos la fila DESPUÉS,
+    // si no el re-render la borraría y "no aparecería nada".
+    setTimeout(() => abrirFilaAlta(apellido, nombre, origId), 350);
 }
 
 // Marcar cambio en checkbox
