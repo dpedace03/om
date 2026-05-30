@@ -272,6 +272,7 @@
         .btn-import,
         .btn-delete-day,
         .btn-blanqueo,
+        .btn-cambiardia,
         .btn-stats,
         .btn-export,
         .btn-backup,
@@ -280,6 +281,16 @@
             width: 190px;
             box-sizing: border-box;
             flex-shrink: 0;
+        }
+
+        .btn-cambiardia {
+            background: #4DB6AC;
+            color: white;
+        }
+
+        .btn-cambiardia:hover {
+            background: #26A69A;
+            transform: translateY(-2px);
         }
 
         .btn-blanqueo {
@@ -839,6 +850,13 @@
             background: #5C6BC0;
         }
 
+        #alumnosBody tr { cursor: pointer; }
+
+        #alumnosBody tr.fila-seleccionada td {
+            background: #e3f2fd !important;
+            box-shadow: inset 3px 0 0 #2196F3;
+        }
+
         .edit-input {
             width: 100%;
             padding: 4px 8px;
@@ -1039,6 +1057,7 @@
             .btn-import,
             .btn-delete-day,
             .btn-blanqueo,
+            .btn-cambiardia,
             .btn-stats,
             .btn-export,
             .btn-backup,
@@ -1208,6 +1227,12 @@
                 <div class="import-section">
                     <button class="btn btn-blanqueo" onclick="blanquearDia()">
                         🧹 Blanqueo
+                    </button>
+                </div>
+
+                <div class="import-section">
+                    <button class="btn btn-cambiardia" onclick="cambiarDiaSeleccionado()">
+                        🗓️ Cambiar Día
                     </button>
                 </div>
 

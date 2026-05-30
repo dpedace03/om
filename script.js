@@ -7,6 +7,7 @@ let nextId = 1;
 let filtroAsistencia = 'todos'; // 'todos', 'presentes', 'ausentes'
 let registrosAsistencia = []; // Registros de asistencia por fecha
 let usuarioActual = ''; // Nombre de quien está registrando
+let _alumnoSeleccionado = null; // Alumno seleccionado en la tabla (para "Cambiar Día")
 
 // Clave para localStorage
 const STORAGE_KEY = 'academia_om_alumnos';
@@ -370,6 +371,7 @@ function detenerAutoSync() {
 // Seleccionar día
 function seleccionarDia(dia, btnElement) {
     diaSeleccionado = dia;
+    _alumnoSeleccionado = null; // limpiar selección al cambiar de día
 
     // Actualizar clases activas
     document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
@@ -988,7 +990,7 @@ function renderizarAlumnos(alumnos) {
             : 'disabled';
 
         return `
-        <tr>
+        <tr data-id="${alumno.id}" onclick="seleccionarFila(${alumno.id})" class="${_alumnoSeleccionado === alumno.id ? 'fila-seleccionada' : ''}">
             <td class="sticky-col sticky-col-1">
                 <input type="checkbox" class="presente-checkbox" data-id="${alumno.id}" ${presente ? 'checked' : ''} ${checkboxAttrs}>
             </td>
@@ -998,7 +1000,6 @@ function renderizarAlumnos(alumnos) {
             <td>${alumno.sala}</td>
             <td>
                 <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
-                <button class="btn btn-changeday" onclick="cambiarDiaAlumno(${alumno.id})" title="Cambiar de día">🗓️</button>
                 <button class="btn btn-edit" onclick="editarAlumno(${alumno.id})" title="Editar datos">✏️</button>
                 <span class="marcado-por" title="${escaparHTML(tituloMarca)}">${marcadoPor ? escaparHTML(marcadoPor) : ''}</span>
             </td>
@@ -1059,6 +1060,23 @@ function canonizarDia(texto) {
         jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo'
     };
     return mapa[t] || null;
+}
+
+// Seleccionar una fila (alumno) tocándola
+function seleccionarFila(id) {
+    _alumnoSeleccionado = id;
+    document.querySelectorAll('#alumnosBody tr').forEach(tr => {
+        tr.classList.toggle('fila-seleccionada', String(tr.getAttribute('data-id')) === String(id));
+    });
+}
+
+// Botón del panel: cambiar de día al alumno seleccionado
+function cambiarDiaSeleccionado() {
+    if (_alumnoSeleccionado == null || !alumnosData.find(a => a.id === _alumnoSeleccionado)) {
+        mostrarModal('Sin selección', 'Primero tocá la fila del alumno que querés cambiar de día.');
+        return;
+    }
+    cambiarDiaAlumno(_alumnoSeleccionado);
 }
 
 function cambiarDiaAlumno(id) {
