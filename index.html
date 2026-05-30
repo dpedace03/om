@@ -138,6 +138,15 @@
             cursor: default;
         }
 
+        .auto-status {
+            font-size: 12px;
+            color: #4CAF50;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            white-space: nowrap;
+        }
+
         .center-section {
             flex: 0 0 auto;
             display: flex;
@@ -1100,6 +1109,7 @@
                 <button type="button" onclick="cerrarSesion()">Cerrar sesión</button>
             </div>
             <button type="button" class="btn-refresh" id="btnRefrescar" onclick="refrescarDatos()" title="Traer los últimos datos de la nube">🔄 Actualizar</button>
+            <span id="autoStatus" class="auto-status"></span>
             <!-- Combo "Ir a fecha": oculto (display:none) por si se quiere reactivar en el futuro -->
             <div class="fecha-historial">
                 <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
@@ -1108,7 +1118,7 @@
             </div>
         </div>
 
-        <h1><span class="logo-toggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones"><span class="otro">Otro</span><span class="mundo">Mundo</span></span> - Asistencias</h1>
+        <h1><span class="otro">Otro</span><span class="mundo">Mundo</span> - Asistencias</h1>
 
         <div class="main-layout">
 

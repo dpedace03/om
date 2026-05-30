@@ -102,6 +102,7 @@ async function cerrarSesion() {
     }
     try { await window.supabaseClient.auth.signOut(); } catch (e) { console.error(e); }
 
+    detenerAutoSync();
     // Limpiar el estado en pantalla y volver al login
     alumnosData = [];
     registrosAsistencia = [];
@@ -273,6 +274,7 @@ async function iniciarApp() {
     }
 
     actualizarSelectorFechas();
+    iniciarAutoSync();
 }
 
 // Cargar datos desde Supabase (base compartida en la nube)
@@ -311,6 +313,58 @@ async function refrescarDatos() {
             cargarAlumnos(diaSeleccionado);
         }
     }
+}
+
+// ===== Guardado y actualización automáticos (cada 2 minutos) =====
+let autoSyncInterval = null;
+let _autoStatusTimer = null;
+
+// Mostrar un aviso discreto y temporal (ej. "✓ Guardado 14:30")
+function mostrarEstadoAuto(texto) {
+    const el = document.getElementById('autoStatus');
+    if (!el) return;
+    const ahora = new Date();
+    const hh = String(ahora.getHours()).padStart(2, '0');
+    const mm = String(ahora.getMinutes()).padStart(2, '0');
+    el.textContent = '✓ ' + texto + ' ' + hh + ':' + mm;
+    el.style.opacity = '1';
+    if (_autoStatusTimer) clearTimeout(_autoStatusTimer);
+    _autoStatusTimer = setTimeout(() => { el.style.opacity = '0'; }, 4000);
+}
+
+// Actualización silenciosa desde la nube (sin modales)
+async function refrescarAuto() {
+    // No refrescar si hay un alta de alumno en curso (se perdería lo tipeado)
+    if (document.getElementById('nuevoApellido')) return;
+    // No refrescar si quedaron cambios sin guardar (no pisar lo del usuario)
+    if (cambiosPendientes.size > 0) return;
+    const ok = await cargarDesdeSupabase();
+    if (ok) {
+        actualizarSelectorFechas();
+        if (diaSeleccionado) cargarAlumnos(diaSeleccionado);
+        mostrarEstadoAuto('Actualizado');
+    }
+}
+
+// Tarea periódica: primero guarda lo pendiente, luego actualiza
+async function autoSync() {
+    try {
+        if (cambiosPendientes.size > 0) {
+            await guardarPendientes(true);
+        }
+        await refrescarAuto();
+    } catch (e) {
+        console.error('Error en la sincronización automática:', e);
+    }
+}
+
+function iniciarAutoSync() {
+    if (autoSyncInterval) clearInterval(autoSyncInterval);
+    autoSyncInterval = setInterval(autoSync, 120000); // 2 minutos
+}
+
+function detenerAutoSync() {
+    if (autoSyncInterval) { clearInterval(autoSyncInterval); autoSyncInterval = null; }
 }
 
 // Seleccionar día
@@ -907,11 +961,10 @@ function actualizarBotonGuardar() {
 }
 
 // Guardar cambios pendientes
-async function guardarCambios() {
-    if (cambiosPendientes.size === 0) {
-        mostrarModal('Información', 'No hay cambios pendientes para guardar');
-        return;
-    }
+// Guarda los cambios pendientes en la nube. Devuelve true/false.
+// silencioso = true -> no muestra modales (se usa en el guardado automático).
+async function guardarPendientes(silencioso) {
+    if (cambiosPendientes.size === 0) return true;
 
     // Reunir los registros modificados (cada clave es "alumno_id|fecha")
     const aGuardar = [];
@@ -930,13 +983,30 @@ async function guardarCambios() {
         cambiosPendientes.clear();
         actualizarBotonGuardar();
         actualizarSelectorFechas();
-        mostrarModal('Éxito', 'Cambios guardados exitosamente');
+        if (silencioso) {
+            mostrarEstadoAuto('Guardado');
+        } else {
+            mostrarModal('Éxito', 'Cambios guardados exitosamente');
+        }
+        return true;
     } catch (e) {
         console.error('Error al guardar asistencia:', e);
-        mostrarModal('Error', 'No se pudieron guardar los cambios en la nube. Tu marca quedó en pantalla; revisá la conexión e intentá de nuevo.');
+        if (!silencioso) {
+            mostrarModal('Error', 'No se pudieron guardar los cambios en la nube. Tu marca quedó en pantalla; revisá la conexión e intentá de nuevo.');
+        }
+        return false;
     } finally {
         if (btn) { btn.disabled = false; }
     }
+}
+
+// Botón "Guardar Cambios"
+async function guardarCambios() {
+    if (cambiosPendientes.size === 0) {
+        mostrarModal('Información', 'No hay cambios pendientes para guardar');
+        return;
+    }
+    await guardarPendientes(false);
 }
 
 // Eliminar alumno
