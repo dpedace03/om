@@ -180,15 +180,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const nuevaFecha = this.value;
         const nuevoDia = obtenerDiaSemana(nuevaFecha);
 
-        // Si es sábado o domingo, seleccionar lunes
-        let diaSeleccionado = nuevoDia;
-        if (nuevoDia === 'Sábado' || nuevoDia === 'Domingo') {
-            diaSeleccionado = 'Lunes';
-        }
-
-        const nuevoDiaBtn = document.querySelector(`.day-btn[data-dia="${diaSeleccionado}"]`);
+        const nuevoDiaBtn = document.querySelector(`.day-btn[data-dia="${nuevoDia}"]`);
         if (nuevoDiaBtn) {
-            seleccionarDia(diaSeleccionado, nuevoDiaBtn);
+            seleccionarDia(nuevoDia, nuevoDiaBtn);
         }
     });
 
@@ -266,16 +260,12 @@ async function iniciarApp() {
     const ok = await cargarDesdeSupabase();
     if (!ok) return;
 
-    // Seleccionar día por default según la fecha actual
+    // Seleccionar el día de la semana según la fecha actual
     const fechaInput = document.getElementById('fecha');
     const diaActual = obtenerDiaSemana(fechaInput.value);
-    let diaInicial = diaActual;
-    if (diaActual === 'Sábado' || diaActual === 'Domingo') {
-        diaInicial = 'Lunes';
-    }
-    const diaBtn = document.querySelector(`.day-btn[data-dia="${diaInicial}"]`);
+    const diaBtn = document.querySelector(`.day-btn[data-dia="${diaActual}"]`);
     if (diaBtn) {
-        seleccionarDia(diaInicial, diaBtn);
+        seleccionarDia(diaActual, diaBtn);
     }
 
     actualizarSelectorFechas();
@@ -542,7 +532,7 @@ function exportarExcel() {
         return;
     }
 
-    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
     // Conjunto de presentes para búsqueda rápida
     const presentesSet = new Set();
@@ -1099,6 +1089,8 @@ function normalizarDiaSemana(nombre) {
     if (nombreNormalizado.includes('miercoles') || nombreNormalizado.includes('miércoles') || nombreNormalizado.includes('mierco')) return 'Miércoles';
     if (nombreNormalizado.includes('jueves')) return 'Jueves';
     if (nombreNormalizado.includes('viernes')) return 'Viernes';
+    if (nombreNormalizado.includes('sabado') || nombreNormalizado.includes('sábado')) return 'Sábado';
+    if (nombreNormalizado.includes('domingo')) return 'Domingo';
     
     // Si no coincide, devolver el nombre original capitalizado
     return nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase();

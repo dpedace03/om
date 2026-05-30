@@ -198,7 +198,7 @@
     }
 
     function vPorDia() {
-        const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         const apd = alumnosPorDia();
         const fcd = fechasClasePorDia();
         const mp = mapaPresentes();
