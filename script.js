@@ -647,7 +647,14 @@ function agregarAlumno() {
     
     const tbody = document.getElementById('alumnosBody');
     const fecha = document.getElementById('fecha').value;
-    
+
+    // Opciones existentes (distintas) para los combos de Programa y Sala
+    const valoresUnicos = (campo) => [...new Set(
+        alumnosData.map(a => (a[campo] || '').trim()).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+    const progOpts = valoresUnicos('programa').map(v => `<option value="${escaparHTML(v)}"></option>`).join('');
+    const salaOpts = valoresUnicos('sala').map(v => `<option value="${escaparHTML(v)}"></option>`).join('');
+
     // Agregar fila en blanco para edición
     const nuevaFila = document.createElement('tr');
     nuevaFila.innerHTML = `
@@ -656,14 +663,20 @@ function agregarAlumno() {
         </td>
         <td><input type="text" class="edit-input" placeholder="Apellido" id="nuevoApellido"></td>
         <td><input type="text" class="edit-input" placeholder="Nombre" id="nuevoNombre"></td>
-        <td><input type="text" class="edit-input" placeholder="Programa" id="nuevoPrograma"></td>
-        <td><input type="text" class="edit-input" placeholder="Sala" id="nuevoSala"></td>
+        <td>
+            <input type="text" class="edit-input" placeholder="Programa" id="nuevoPrograma" list="listaProgramas" autocomplete="off">
+            <datalist id="listaProgramas">${progOpts}</datalist>
+        </td>
+        <td>
+            <input type="text" class="edit-input" placeholder="Sala" id="nuevoSala" list="listaSalas" autocomplete="off">
+            <datalist id="listaSalas">${salaOpts}</datalist>
+        </td>
         <td>
             <button class="btn btn-save-row" onclick="guardarNuevoAlumno()">Guardar</button>
             <button class="btn btn-cancel-row" onclick="cancelarNuevoAlumno(this)">Cancelar</button>
         </td>
     `;
-    
+
     tbody.insertBefore(nuevaFila, tbody.firstChild);
 }
 
@@ -769,7 +782,14 @@ function renderizarAlumnos(alumnos) {
     // Mostrar u ocultar el banner de modo consulta
     const banner = document.getElementById('consultaBanner');
     if (banner) {
-        banner.style.display = puedeMarcar ? 'none' : 'block';
+        if (puedeMarcar) {
+            banner.style.display = 'none';
+        } else {
+            const p = fecha.split('-');
+            const fechaFmt = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : fecha;
+            banner.textContent = `💡 El ${fechaFmt} no es ${diaSeleccionado}, solo podés ver la asistencia pero no marcar presentes.`;
+            banner.style.display = 'block';
+        }
     }
 
     if (alumnos.length === 0) {
