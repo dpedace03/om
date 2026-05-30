@@ -150,10 +150,14 @@ function obtenerDiaSemana(fecha) {
 // Toggle visibilidad del panel de opciones
 function toggleButtons() {
     const rightButtons = document.getElementById('rightButtons');
-    if (rightButtons.style.display === 'none' || rightButtons.style.display === '') {
-        rightButtons.style.display = 'flex';
-    } else {
-        rightButtons.style.display = 'none';
+    const visible = !(rightButtons.style.display === 'none' || rightButtons.style.display === '');
+    rightButtons.style.display = visible ? 'none' : 'flex';
+
+    // Reflejar el estado en el ícono sol
+    const sol = document.getElementById('sunToggle');
+    if (sol) {
+        sol.classList.toggle('activo', !visible);
+        sol.title = visible ? 'Mostrar opciones' : 'Ocultar opciones';
     }
 }
 

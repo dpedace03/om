@@ -46,6 +46,27 @@
             display: none;
         }
 
+        .sun-toggle {
+            position: absolute;
+            top: 16px;
+            right: 22px;
+            font-size: 30px;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 400;
+            user-select: none;
+            transition: transform 0.4s ease, filter 0.2s ease;
+        }
+
+        .sun-toggle:hover {
+            transform: scale(1.15) rotate(20deg);
+        }
+
+        .sun-toggle.activo {
+            transform: rotate(180deg);
+            filter: drop-shadow(0 0 6px rgba(255, 165, 0, 0.7));
+        }
+
         h1 {
             text-align: center;
             color: #333;
@@ -132,7 +153,7 @@
             gap: 10px;
             position: absolute;
             right: 30px;
-            top: 15px;
+            top: 56px;
             z-index: 300;
             background: rgba(255, 255, 255, 0.97);
             padding: 12px;
@@ -1069,6 +1090,7 @@
 </head>
 <body>
     <div class="container">
+        <div class="sun-toggle" id="sunToggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones">☀️</div>
         <div class="top-bar">
             <div class="date-selector">
                 <input type="date" id="fecha" name="fecha">
