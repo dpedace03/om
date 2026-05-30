@@ -882,12 +882,132 @@ function renderizarAlumnos(alumnos) {
             <td>${alumno.programa}</td>
             <td>${alumno.sala}</td>
             <td>
-                <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})">Eliminar</button>
+                <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
+                <button class="btn btn-changeday" onclick="cambiarDiaAlumno(${alumno.id})" title="Cambiar de día">🗓️</button>
                 <span class="marcado-por" title="${escaparHTML(tituloMarca)}">${marcadoPor ? escaparHTML(marcadoPor) : ''}</span>
             </td>
         </tr>
     `;
     }).join('');
+}
+
+// ===== Blanqueo: borrar los presentes del día-fecha seleccionado =====
+async function blanquearDia() {
+    if (!diaSeleccionado) {
+        mostrarModal('Información', 'Seleccioná un día primero.');
+        return;
+    }
+    const fecha = document.getElementById('fecha').value;
+    const p = fecha.split('-');
+    const fechaFmt = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : fecha;
+
+    // Solo se puede blanquear si la fecha corresponde al día seleccionado
+    if (!fechaCoincideConDia()) {
+        mostrarModal('Día no válido', `El ${fechaFmt} no es ${diaSeleccionado}. El blanqueo solo se puede hacer cuando la fecha corresponde al día.`);
+        return;
+    }
+
+    mostrarModal(
+        'Confirmar blanqueo',
+        `¿Borrar todos los presentes del ${diaSeleccionado} ${fechaFmt}? Esta acción no se puede deshacer.`,
+        async () => {
+            try {
+                await DB.borrarAsistenciaDeFecha(fecha);
+                // Limpiar en memoria los registros de esa fecha
+                registrosAsistencia = registrosAsistencia.filter(r => r.fecha !== fecha);
+                // Quitar de los cambios pendientes los de esa fecha
+                const aQuitar = [];
+                cambiosPendientes.forEach(k => { if (k.endsWith('|' + fecha)) aQuitar.push(k); });
+                aQuitar.forEach(k => cambiosPendientes.delete(k));
+                actualizarBotonGuardar();
+                actualizarSelectorFechas();
+                cargarAlumnos(diaSeleccionado);
+                setTimeout(() => mostrarModal('Éxito', `Se borraron los presentes del ${diaSeleccionado} ${fechaFmt}.`), 0);
+            } catch (e) {
+                console.error('Error al blanquear el día:', e);
+                mostrarModal('Error', 'No se pudo blanquear el día en la nube. Revisá la conexión e intentá de nuevo.');
+            }
+        }
+    );
+}
+
+// ===== Cambiar de día a un alumno =====
+let _alumnoCambioDia = null;
+
+function canonizarDia(texto) {
+    const t = (texto || '').toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // quitar acentos
+    const mapa = {
+        lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
+        jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo'
+    };
+    return mapa[t] || null;
+}
+
+function cambiarDiaAlumno(id) {
+    const alumno = alumnosData.find(a => a.id === id);
+    if (!alumno) return;
+    _alumnoCambioDia = id;
+    document.getElementById('cambioDiaTexto').textContent =
+        `Cambiamos a ${alumno.apellido}, ${alumno.nombre} del día ${alumno.dia_semana} al día:`;
+    const input = document.getElementById('cambioDiaInput');
+    input.value = '';
+    document.getElementById('cambioDiaError').style.display = 'none';
+    document.getElementById('cambioDiaModal').style.display = 'block';
+    input.focus();
+}
+
+function cerrarCambioDia() {
+    document.getElementById('cambioDiaModal').style.display = 'none';
+    _alumnoCambioDia = null;
+}
+
+async function confirmarCambioDia() {
+    const alumno = alumnosData.find(a => a.id === _alumnoCambioDia);
+    const err = document.getElementById('cambioDiaError');
+    if (!alumno) { cerrarCambioDia(); return; }
+
+    const dia = canonizarDia(document.getElementById('cambioDiaInput').value);
+    if (!dia) {
+        err.textContent = '❌ Día no válido. Escribí: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado o Domingo.';
+        err.style.display = 'block';
+        return;
+    }
+    if (dia === alumno.dia_semana) {
+        err.textContent = `❌ El alumno ya está en ${dia}.`;
+        err.style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('cambioDiaConfirm');
+    if (btn) btn.disabled = true;
+
+    const oldId = alumno.id;
+    // En el nuevo día solo se conservan apellido y nombre (programa y sala van a mano)
+    const nuevo = { apellido: alumno.apellido, nombre: alumno.nombre, programa: '', sala: '', dia_semana: dia };
+
+    try {
+        // Primero se crea en el nuevo día y luego se elimina del actual
+        const creado = await DB.insertarAlumno(nuevo);
+        nuevo.id = creado.id;
+        await DB.eliminarAlumno(oldId);
+
+        // Actualizar memoria
+        alumnosData = alumnosData.filter(a => a.id !== oldId);
+        registrosAsistencia = registrosAsistencia.filter(r => r.alumno_id !== oldId);
+        alumnosData.push(nuevo);
+
+        cerrarCambioDia();
+        actualizarSelectorFechas();
+        if (diaSeleccionado) cargarAlumnos(diaSeleccionado);
+        setTimeout(() => mostrarModal('Éxito', `Se cambió a ${nuevo.apellido}, ${nuevo.nombre} al día ${dia}. Acordate de cargar Programa y Sala a mano.`), 0);
+    } catch (e) {
+        console.error('Error al cambiar de día:', e);
+        err.textContent = '❌ No se pudo cambiar de día en la nube. Revisá la conexión e intentá de nuevo.';
+        err.style.display = 'block';
+    } finally {
+        if (btn) btn.disabled = false;
+    }
 }
 
 // Marcar cambio en checkbox

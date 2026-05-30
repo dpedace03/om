@@ -271,6 +271,7 @@
         /* Mismo tamaño para todos estos botones */
         .btn-import,
         .btn-delete-day,
+        .btn-blanqueo,
         .btn-stats,
         .btn-export,
         .btn-backup,
@@ -279,6 +280,16 @@
             width: 190px;
             box-sizing: border-box;
             flex-shrink: 0;
+        }
+
+        .btn-blanqueo {
+            background: #FF7043;
+            color: white;
+        }
+
+        .btn-blanqueo:hover {
+            background: #F4511E;
+            transform: translateY(-2px);
         }
 
         .btn-import {
@@ -793,13 +804,26 @@
             background: #FFB74D;
             color: white;
             padding: 4px 8px;
-            font-size: 11px;
+            font-size: 16px;
             min-width: auto;
             width: auto;
         }
 
         .btn-delete:hover {
             background: #FF9800;
+        }
+
+        .btn-changeday {
+            background: #4DB6AC;
+            color: white;
+            padding: 4px 8px;
+            font-size: 16px;
+            min-width: auto;
+            width: auto;
+        }
+
+        .btn-changeday:hover {
+            background: #26A69A;
         }
 
         .edit-input {
@@ -1001,6 +1025,7 @@
 
             .btn-import,
             .btn-delete-day,
+            .btn-blanqueo,
             .btn-stats,
             .btn-export,
             .btn-backup,
@@ -1168,6 +1193,12 @@
                 </div>
 
                 <div class="import-section">
+                    <button class="btn btn-blanqueo" onclick="blanquearDia()">
+                        🧹 Blanqueo
+                    </button>
+                </div>
+
+                <div class="import-section">
                     <button class="btn btn-stats" onclick="mostrarEstadisticas()">
                         📊 Estadísticas
                     </button>
@@ -1265,6 +1296,32 @@
             <div class="modal-buttons">
                 <button class="btn btn-modal-confirm" id="modalConfirm">Confirmar</button>
                 <button class="btn btn-modal-cancel" id="modalCancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cambiar de día a un alumno -->
+    <div id="cambioDiaModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarCambioDia()">&times;</span>
+            <h2>🗓️ Cambiar de día</h2>
+            <p id="cambioDiaTexto"></p>
+            <input type="text" id="cambioDiaInput" list="diasValidos" placeholder="Día (ej. Lunes)" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarCambioDia();}"
+                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
+            <datalist id="diasValidos">
+                <option value="Lunes"></option>
+                <option value="Martes"></option>
+                <option value="Miércoles"></option>
+                <option value="Jueves"></option>
+                <option value="Viernes"></option>
+                <option value="Sábado"></option>
+                <option value="Domingo"></option>
+            </datalist>
+            <div id="cambioDiaError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" id="cambioDiaConfirm" onclick="confirmarCambioDia()">Cambiar</button>
+                <button class="btn btn-modal-cancel" onclick="cerrarCambioDia()">Cancelar</button>
             </div>
         </div>
     </div>
