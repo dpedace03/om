@@ -95,6 +95,51 @@ async function confirmarLogin() {
     }
 }
 
+// ===== Editar el nombre propio (display name) =====
+function abrirNombreModal() {
+    const input = document.getElementById('nombreInput');
+    // Precargar el nombre actual si no es un email
+    const actual = (usuarioActual && usuarioActual.indexOf('@') === -1) ? usuarioActual : '';
+    input.value = actual;
+    document.getElementById('nombreError').style.display = 'none';
+    document.getElementById('nombreModal').style.display = 'block';
+    input.focus();
+}
+
+function cerrarNombreModal() {
+    document.getElementById('nombreModal').style.display = 'none';
+}
+
+async function guardarNombre() {
+    const nombre = document.getElementById('nombreInput').value.trim();
+    const err = document.getElementById('nombreError');
+    if (!nombre) {
+        err.textContent = '❌ Ingresá un nombre.';
+        err.style.display = 'block';
+        return;
+    }
+    if (!window.supabaseClient || !window.supabaseClient.auth) {
+        err.textContent = '❌ No hay conexión con Supabase.';
+        err.style.display = 'block';
+        return;
+    }
+    const btn = document.getElementById('nombreConfirm');
+    if (btn) btn.disabled = true;
+    try {
+        const { data, error } = await window.supabaseClient.auth.updateUser({ data: { display_name: nombre } });
+        if (error) throw error;
+        setUsuarioDesdeSesion(data.user);
+        cerrarNombreModal();
+        mostrarEstadoAuto('Nombre actualizado');
+    } catch (e) {
+        console.error('Error al guardar el nombre:', e);
+        err.textContent = '❌ No se pudo guardar. Revisá la conexión e intentá de nuevo.';
+        err.style.display = 'block';
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
 // Cerrar sesión
 async function cerrarSesion() {
     if (cambiosPendientes.size > 0) {
