@@ -46,28 +46,6 @@
             display: none;
         }
 
-        .sun-toggle {
-            position: absolute;
-            top: 14px;
-            right: 22px;
-            font-size: 30px;
-            line-height: 1;
-            cursor: pointer;
-            z-index: 400;
-            user-select: none;
-            color: #667eea;
-            transition: transform 0.2s ease, color 0.2s ease;
-        }
-
-        .sun-toggle:hover {
-            transform: scale(1.12);
-        }
-
-        .sun-toggle.activo {
-            color: #764ba2;
-            text-shadow: 0 0 6px rgba(118, 75, 162, 0.4);
-        }
-
         h1 {
             text-align: center;
             color: #333;
@@ -110,42 +88,11 @@
             flex-wrap: wrap;
         }
 
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-        }
-
-        .btn-refresh {
-            background: #ede7f6;
-            border: 1px solid #d6ccea;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #5e35b1;
-            padding: 4px 10px;
-            cursor: pointer;
-        }
-
-        .btn-refresh:hover {
-            background: #e1d5f5;
-        }
-
-        .btn-refresh:disabled {
-            opacity: 0.6;
-            cursor: default;
-        }
-
-        .auto-status {
-            font-size: 12px;
-            color: #4CAF50;
-            font-weight: 600;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            white-space: nowrap;
+        .left-section {
+            flex: 0 0 auto;
+            position: absolute;
+            left: 30px;
+            top: 30px;
         }
 
         .center-section {
@@ -163,7 +110,7 @@
             gap: 10px;
             position: absolute;
             right: 30px;
-            top: 56px;
+            top: 15px;
             z-index: 300;
             background: rgba(255, 255, 255, 0.97);
             padding: 12px;
@@ -195,13 +142,10 @@
         }
 
         .date-selector input[type="date"] {
-            padding: 4px 10px;
-            border: 1px solid #d6ccea;
+            padding: 6px 12px;
+            border: 2px solid #ddd;
             border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            background: #ede7f6;
+            font-size: 14px;
         }
 
         .stats-header {
@@ -272,8 +216,6 @@
         /* Mismo tamaño para todos estos botones */
         .btn-import,
         .btn-delete-day,
-        .btn-blanqueo,
-        .btn-cambiardia,
         .btn-stats,
         .btn-export,
         .btn-backup,
@@ -282,26 +224,6 @@
             width: 190px;
             box-sizing: border-box;
             flex-shrink: 0;
-        }
-
-        .btn-cambiardia {
-            background: #4DB6AC;
-            color: white;
-        }
-
-        .btn-cambiardia:hover {
-            background: #26A69A;
-            transform: translateY(-2px);
-        }
-
-        .btn-blanqueo {
-            background: #FF7043;
-            color: white;
-        }
-
-        .btn-blanqueo:hover {
-            background: #F4511E;
-            transform: translateY(-2px);
         }
 
         .btn-import {
@@ -383,11 +305,12 @@
             50% { box-shadow: 0 0 0 6px rgba(255, 152, 0, 0); }
         }
 
-        /* Selector "Ir a fecha": oculto (display:none). Se conserva en el DOM por si se reactiva. */
+        /* Selector "Ir a fecha" */
         .fecha-historial {
-            display: none;
+            display: flex;
             align-items: center;
             gap: 8px;
+            margin-top: 8px;
         }
 
         .fecha-historial label {
@@ -403,141 +326,6 @@
             font-size: 13px;
             max-width: 200px;
         }
-
-        /* ===== Panel de estadísticas ===== */
-        /* El panel de estadísticas se muestra a pantalla completa (no como popup) */
-        #statsModal {
-            background-color: #fff;
-            overflow-y: auto;
-        }
-
-        #statsModal .stats-modal-content {
-            margin: 0 auto;
-            width: 100%;
-            max-width: 1100px;
-            min-height: 100vh;
-            max-height: none;
-            border-radius: 0;
-            box-shadow: none;
-            padding: 22px 28px 48px;
-            overflow: visible;
-            animation: none;
-        }
-
-        #statsModal .modal-close {
-            position: fixed;
-            top: 12px;
-            right: 18px;
-            z-index: 1002;
-            color: #777;
-            background: #fff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-
-        #statsModal #statsCanvasWrap {
-            height: 460px;
-        }
-
-        #statsModal .stats-menu {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            padding: 8px 0;
-            z-index: 5;
-        }
-
-        .stats-modal-content {
-            max-width: 920px;
-            width: 95%;
-            margin: 4% auto;
-            max-height: 88vh;
-            overflow-y: auto;
-        }
-
-        .stats-menu {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 14px;
-        }
-
-        .stats-chip {
-            border: 1px solid #d6ccea;
-            background: #f4f0fb;
-            color: #5e35b1;
-            border-radius: 16px;
-            padding: 5px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .stats-chip:hover { background: #e9e1f7; }
-
-        .stats-chip.activo {
-            background: #667eea;
-            border-color: #667eea;
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .stats-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 6px;
-        }
-
-        .stats-toolbar > strong { font-size: 16px; color: #333; }
-
-        .stats-toggle { display: inline-flex; border: 1px solid #d6ccea; border-radius: 6px; overflow: hidden; }
-
-        .stats-tg {
-            border: none;
-            background: #fff;
-            color: #5e35b1;
-            padding: 5px 14px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .stats-tg.activo { background: #667eea; color: #fff; font-weight: 600; }
-
-        .stats-nota { font-size: 12px; color: #999; margin: 0 0 12px 0; }
-
-        .stats-tabla-wrap { overflow-x: auto; }
-
-        .stats-tabla {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        .stats-tabla th, .stats-tabla td {
-            text-align: left;
-            padding: 8px 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .stats-tabla th {
-            background: #f4f0fb;
-            color: #5e35b1;
-            position: sticky;
-            top: 0;
-        }
-
-        .stats-tabla tbody tr:nth-child(even) { background: #fafafa; }
-
-        #statsCanvasWrap { position: relative; height: 360px; }
-
-        .stats-vacio { color: #777; font-size: 14px; padding: 20px 0; text-align: center; }
 
         .stats-list {
             list-style: none;
@@ -620,8 +408,6 @@
         .day-btn.miercoles:hover { background: #45B7D1; color: white; }
         .day-btn.jueves:hover { background: #96CEB4; color: white; }
         .day-btn.viernes:hover { background: #FFEAA7; color: #333; }
-        .day-btn.sabado:hover { background: #C8A2C8; color: white; }
-        .day-btn.domingo:hover { background: #F4978E; color: white; }
 
         .search-section {
             display: flex;
@@ -701,6 +487,42 @@
         .btn-add-icon:hover {
             background: #45a049;
             transform: translateY(-1px);
+        }
+
+        .btn-cal {
+            border: none;
+            background: #3f51b5;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 6px 9px;
+            margin-left: 6px;
+            line-height: 1;
+            transition: all 0.3s ease;
+            vertical-align: middle;
+        }
+
+        .btn-cal:hover {
+            background: #303f9f;
+            transform: translateY(-1px);
+        }
+
+        .presencias-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .presencias-list li {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: #eaeefb;
+            color: #333;
+            font-size: 14px;
         }
 
         .btn-add {
@@ -816,46 +638,13 @@
             background: #FFB74D;
             color: white;
             padding: 4px 8px;
-            font-size: 16px;
+            font-size: 11px;
             min-width: auto;
             width: auto;
         }
 
         .btn-delete:hover {
             background: #FF9800;
-        }
-
-        .btn-changeday {
-            background: #4DB6AC;
-            color: white;
-            padding: 4px 8px;
-            font-size: 16px;
-            min-width: auto;
-            width: auto;
-        }
-
-        .btn-changeday:hover {
-            background: #26A69A;
-        }
-
-        .btn-edit {
-            background: #7986CB;
-            color: white;
-            padding: 4px 8px;
-            font-size: 16px;
-            min-width: auto;
-            width: auto;
-        }
-
-        .btn-edit:hover {
-            background: #5C6BC0;
-        }
-
-        #alumnosBody tr { cursor: pointer; }
-
-        #alumnosBody tr.fila-seleccionada td {
-            background: #e3f2fd !important;
-            box-shadow: inset 3px 0 0 #2196F3;
         }
 
         .edit-input {
@@ -1010,6 +799,7 @@
                 gap: 12px;
             }
 
+            .left-section,
             .center-section {
                 width: 100%;
             }
@@ -1057,8 +847,6 @@
 
             .btn-import,
             .btn-delete-day,
-            .btn-blanqueo,
-            .btn-cambiardia,
             .btn-stats,
             .btn-export,
             .btn-backup,
@@ -1157,29 +945,25 @@
 </head>
 <body>
     <div class="container">
-        <div class="sun-toggle" id="sunToggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones">☰</div>
-        <div class="top-bar">
-            <div class="date-selector">
-                <input type="date" id="fecha" name="fecha">
-            </div>
-            <div class="user-badge">
-                👤 <span class="badge-label">Está registrando </span><strong id="usuarioActualLabel">—</strong>
-                <button type="button" onclick="abrirNombreModal()" title="Editar tu nombre">✏️ Nombre</button>
-                <button type="button" onclick="cerrarSesion()">Cerrar sesión</button>
-            </div>
-            <button type="button" class="btn-refresh" id="btnRefrescar" onclick="refrescarDatos()" title="Traer los últimos datos de la nube">🔄 Actualizar</button>
-            <span id="autoStatus" class="auto-status"></span>
-            <!-- Combo "Ir a fecha": oculto (display:none) por si se quiere reactivar en el futuro -->
-            <div class="fecha-historial">
-                <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
-                    <option value="">Fechas registradas…</option>
-                </select>
-            </div>
-        </div>
-
-        <h1><span class="otro">Otro</span><span class="mundo">Mundo</span> - Asistencias</h1>
+        <h1><span class="logo-toggle" onclick="toggleButtons()" title="Mostrar/ocultar opciones"><span class="otro">Otro</span><span class="mundo">Mundo</span></span> - Asistencias</h1>
 
         <div class="main-layout">
+            <div class="left-section">
+                <div class="date-selector">
+                    <label for="fecha">Fecha:</label>
+                    <input type="date" id="fecha" name="fecha">
+                </div>
+                <div class="user-badge">
+                    👤 <span class="badge-label">Registrando como </span><strong id="usuarioActualLabel">—</strong>
+                    <button type="button" onclick="mostrarLogin()">Cambiar</button>
+                </div>
+                <div class="fecha-historial">
+                    <label for="historialFechas">Ir a fecha:</label>
+                    <select id="historialFechas" onchange="irAFechaRegistrada(this.value)">
+                        <option value="">Fechas registradas…</option>
+                    </select>
+                </div>
+            </div>
 
             <div class="center-section">
                 <div class="day-buttons">
@@ -1188,8 +972,6 @@
                     <button class="day-btn miercoles" data-dia="Miércoles">Miércoles</button>
                     <button class="day-btn jueves" data-dia="Jueves">Jueves</button>
                     <button class="day-btn viernes" data-dia="Viernes">Viernes</button>
-                    <button class="day-btn sabado" data-dia="Sábado">Sábado</button>
-                    <button class="day-btn domingo" data-dia="Domingo">Domingo</button>
                 </div>
 
                 <div class="stats-header">
@@ -1227,18 +1009,6 @@
                 </div>
 
                 <div class="import-section">
-                    <button class="btn btn-blanqueo" onclick="blanquearDia()">
-                        🧹 Blanqueo
-                    </button>
-                </div>
-
-                <div class="import-section">
-                    <button class="btn btn-cambiardia" onclick="cambiarDiaSeleccionado()">
-                        🗓️ Cambiar Día
-                    </button>
-                </div>
-
-                <div class="import-section">
                     <button class="btn btn-stats" onclick="mostrarEstadisticas()">
                         📊 Estadísticas
                     </button>
@@ -1270,7 +1040,9 @@
             <button class="btn-add-icon" id="addButton" onclick="agregarAlumno()" title="Agregar alumno">➕👤</button>
         </div>
 
-        <div id="consultaBanner" style="display:none; background:#fff3e0; color:#e65100; padding:10px 15px; border-radius:8px; margin-bottom:15px; text-align:left; font-weight:500;"></div>
+        <div id="consultaBanner" style="display:none; background:#fff3e0; color:#e65100; padding:10px 15px; border-radius:8px; margin-bottom:15px; text-align:center; font-weight:500;">
+            🔒 Modo consulta: la fecha seleccionada no corresponde a este día. Solo puedes ver la asistencia registrada, no marcar presentes.
+        </div>
 
         <div class="table-container">
             <table id="alumnosTable">
@@ -1297,11 +1069,23 @@
         </div>
     </div>
 
+    <!-- Modal de fechas presente del alumno -->
+    <div id="presenciasModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarPresencias()">&times;</span>
+            <h2>📅 Fechas presente</h2>
+            <div id="presenciasContent"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" onclick="cerrarPresencias()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de estadísticas -->
     <div id="statsModal" class="modal">
-        <div class="modal-content stats-modal-content">
+        <div class="modal-content">
             <span class="modal-close" onclick="cerrarEstadisticas()">&times;</span>
-            <h2>📊 Estadísticas</h2>
+            <h2>📊 Estadísticas por día</h2>
             <div id="statsContent"></div>
             <div class="modal-buttons">
                 <button class="btn btn-modal-confirm" onclick="cerrarEstadisticas()">Cerrar</button>
@@ -1312,17 +1096,16 @@
     <!-- Modal de login (nombre del usuario) -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
-            <h2>🔒 Iniciar sesión</h2>
-            <p>Ingresá con tu email y contraseña. Solo personas autorizadas pueden acceder.</p>
-            <input type="email" id="loginEmail" placeholder="Email" autocomplete="username"
-                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
-            <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password"
-                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
+            <h2>👤 Ingresar</h2>
+            <p>Escribe tu nombre. Quedará registrado quién marca o desmarca cada presente.</p>
+            <input type="text" id="loginInput" placeholder="Tu nombre" autocomplete="off" list="usuariosList"
+                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px;">
+            <datalist id="usuariosList"></datalist>
             <div id="loginError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;">
-                ❌ Email o contraseña incorrectos
+                ❌ Por favor ingresa un nombre
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-modal-confirm" id="btnIngresar" onclick="confirmarLogin()">Ingresar</button>
+                <button class="btn btn-modal-confirm" onclick="confirmarLogin()">Ingresar</button>
             </div>
         </div>
     </div>
@@ -1336,49 +1119,6 @@
             <div class="modal-buttons">
                 <button class="btn btn-modal-confirm" id="modalConfirm">Confirmar</button>
                 <button class="btn btn-modal-cancel" id="modalCancel">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para editar el nombre propio (display name) -->
-    <div id="nombreModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="cerrarNombreModal()">&times;</span>
-            <h2>👤 Tu nombre</h2>
-            <p>Este es el nombre que se muestra y queda registrado al marcar la asistencia.</p>
-            <input type="text" id="nombreInput" placeholder="Tu nombre" autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();guardarNombre();}"
-                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
-            <div id="nombreError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;"></div>
-            <div class="modal-buttons">
-                <button class="btn btn-modal-confirm" id="nombreConfirm" onclick="guardarNombre()">Guardar</button>
-                <button class="btn btn-modal-cancel" onclick="cerrarNombreModal()">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para cambiar de día a un alumno -->
-    <div id="cambioDiaModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="cerrarCambioDia()">&times;</span>
-            <h2>🗓️ Cambiar de día</h2>
-            <p id="cambioDiaTexto"></p>
-            <input type="text" id="cambioDiaInput" list="diasValidos" placeholder="Día (ej. Lunes)" autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarCambioDia();}"
-                   style="width:100%; padding:10px 12px; border:2px solid #ddd; border-radius:6px; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
-            <datalist id="diasValidos">
-                <option value="Lunes"></option>
-                <option value="Martes"></option>
-                <option value="Miércoles"></option>
-                <option value="Jueves"></option>
-                <option value="Viernes"></option>
-                <option value="Sábado"></option>
-                <option value="Domingo"></option>
-            </datalist>
-            <div id="cambioDiaError" style="color:#f44336; font-weight:bold; margin-bottom:15px; display:none;"></div>
-            <div class="modal-buttons">
-                <button class="btn btn-modal-confirm" id="cambioDiaConfirm" onclick="confirmarCambioDia()">Cambiar</button>
-                <button class="btn btn-modal-cancel" onclick="cerrarCambioDia()">Cancelar</button>
             </div>
         </div>
     </div>
@@ -1403,18 +1143,6 @@
 
     <!-- SheetJS con soporte de estilos (lee y escribe Excel, permite colorear celdas) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-
-    <!-- Cliente de Supabase (base de datos compartida en la nube) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Tus credenciales viven en config.js (se edita una sola vez) -->
-    <script src="config.js"></script>
-
-    <!-- Capa de datos (reemplaza a localStorage) -->
-    <script src="supabase-data.js"></script>
     <script src="script.js"></script>
-
-    <!-- Gráficos para el panel de estadísticas -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="estadisticas.js"></script>
 </body>
 </html>
