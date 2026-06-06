@@ -1052,6 +1052,8 @@ function renderizarAlumnos(alumnos) {
             <td>
                 <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
                 <button class="btn btn-edit" onclick="editarAlumno(${alumno.id})" title="Editar datos">✏️</button>
+                <button class="btn btn-calmes" onclick="event.stopPropagation(); verCalendario(${alumno.id})" title="Calendario de asistencia">➕</button>
+                <button class="btn btn-cal" onclick="event.stopPropagation(); verPresencias(${alumno.id})" title="Fechas presente">📅</button>
                 <span class="marcado-por" title="${escaparHTML(tituloMarca)}">${marcadoPor ? escaparHTML(marcadoPor) : ''}</span>
             </td>
         </tr>
@@ -1379,6 +1381,127 @@ function solicitarClaveImportar() {
 // Cerrar modal de clave
 function cerrarClaveModal() {
     document.getElementById('claveModal').style.display = 'none';
+}
+
+// Mostrar todas las fechas en que un alumno estuvo presente
+function verPresencias(id) {
+    const alumno = alumnosData.find(a => a.id === id);
+    const nombre = alumno ? `${alumno.apellido}, ${alumno.nombre}` : '';
+
+    const fechas = registrosAsistencia
+        .filter(r => r.alumno_id === id && r.presente === 1)
+        .map(r => r.fecha)
+        .sort();
+
+    let html = `<p style="margin-bottom:12px;"><strong>${escaparHTML(nombre)}</strong></p>`;
+
+    if (fechas.length === 0) {
+        html += '<p style="color:#888;">Sin presentes registrados.</p>';
+    } else {
+        html += `<p style="font-size:13px; color:#777; margin-bottom:8px;">Total: ${fechas.length} presente(s)</p>`;
+        html += '<ul class="presencias-list">' + fechas.map(f => {
+            const p = f.split('-');
+            return `<li>${obtenerDiaSemana(f)} ${p[2]}/${p[1]}/${p[0]}</li>`;
+        }).join('') + '</ul>';
+    }
+
+    document.getElementById('presenciasContent').innerHTML = html;
+    document.getElementById('presenciasModal').style.display = 'block';
+}
+
+// Cerrar modal de presencias
+function cerrarPresencias() {
+    document.getElementById('presenciasModal').style.display = 'none';
+}
+
+// ===== Calendario mensual de asistencia por alumno =====
+let _calAlumnoId = null;
+let _calYear = null;
+let _calMonth = null; // 0-11
+
+function verCalendario(id) {
+    _calAlumnoId = id;
+    const hoy = new Date();
+    _calYear = hoy.getFullYear();
+    _calMonth = hoy.getMonth();
+    renderCalendario();
+    document.getElementById('calendarioModal').style.display = 'block';
+}
+
+function calMes(delta) {
+    _calMonth += delta;
+    if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+    else if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+    renderCalendario();
+}
+
+function cerrarCalendario() {
+    document.getElementById('calendarioModal').style.display = 'none';
+}
+
+function renderCalendario() {
+    const alumno = alumnosData.find(a => a.id === _calAlumnoId);
+    if (!alumno) return;
+
+    const diaInscripto = alumno.dia_semana;
+    const year = _calYear;
+    const month = _calMonth;
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const nombresDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+    const pad = n => String(n).padStart(2, '0');
+    const isoDe = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+
+    // Fechas en las que se tomó asistencia (existe algún registro) y presente del alumno
+    const fechasConClase = new Set(registrosAsistencia.map(r => r.fecha));
+    const presenteAlumno = {};
+    registrosAsistencia.forEach(r => {
+        if (r.alumno_id === _calAlumnoId) presenteAlumno[r.fecha] = r.presente;
+    });
+
+    const diasEnMes = new Date(year, month + 1, 0).getDate();
+    // Offset con lunes como primer día (getDay: 0=Dom..6=Sáb)
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+
+    let celdas = '';
+    for (let i = 0; i < offset; i++) {
+        celdas += '<div class="cal-cell cal-empty"></div>';
+    }
+    for (let d = 1; d <= diasEnMes; d++) {
+        const iso = isoDe(year, month, d);
+        const esInscripto = (obtenerDiaSemana(iso) === diaInscripto);
+        let inner = `<span class="cal-num">${d}</span>`;
+        let cls = 'cal-cell';
+        if (esInscripto) {
+            cls += ' cal-inscripto';
+            if (presenteAlumno[iso] === 1) {
+                inner += '<span class="cal-mark cal-ok">✓</span>';
+            } else if (presenteAlumno[iso] === 0 || fechasConClase.has(iso)) {
+                inner += '<span class="cal-mark cal-no">✗</span>';
+            }
+            // Día inscripto sin clase registrada: sin marca
+        }
+        celdas += `<div class="${cls}">${inner}</div>`;
+    }
+
+    const html = `
+        <div class="cal-header">
+            <button class="cal-nav" onclick="calMes(-1)">◀</button>
+            <span class="cal-title">${meses[month]} ${year}</span>
+            <button class="cal-nav" onclick="calMes(1)">▶</button>
+        </div>
+        <div class="cal-grid cal-dow">${nombresDias.map(n => `<div class="cal-downame">${n}</div>`).join('')}</div>
+        <div class="cal-grid">${celdas}</div>
+        <div class="cal-legend">
+            <span><span class="cal-ok">✓</span> Presente</span>
+            <span><span class="cal-no">✗</span> Ausente</span>
+        </div>
+    `;
+
+    document.getElementById('calendarioContent').innerHTML = html;
+    document.getElementById('calendarioTitulo').textContent =
+        `${alumno.apellido}, ${alumno.nombre} — inscripto los ${diaInscripto}`;
 }
 
 // Validar la clave ingresada
