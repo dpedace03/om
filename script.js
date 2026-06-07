@@ -1063,17 +1063,17 @@ function renderizarAlumnos(alumnos) {
             : 'disabled';
 
         return `
-        <tr data-id="${alumno.id}" onclick="seleccionarFila(${alumno.id})" class="${_alumnoSeleccionado === alumno.id ? 'fila-seleccionada' : ''}">
+        <tr data-id="${alumno.id}" onclick="verDetalleAlumno(${alumno.id})" class="${_alumnoSeleccionado === alumno.id ? 'fila-seleccionada' : ''}">
             <td class="sticky-col sticky-col-1">
-                <input type="checkbox" class="presente-checkbox" data-id="${alumno.id}" ${presente ? 'checked' : ''} ${checkboxAttrs}>
+                <input type="checkbox" class="presente-checkbox" data-id="${alumno.id}" ${presente ? 'checked' : ''} onclick="event.stopPropagation()" ${checkboxAttrs}>
             </td>
             <td class="sticky-col sticky-col-2" title="${escaparHTML(alumno.apellido)}">${alumno.apellido}</td>
             <td class="sticky-col sticky-col-3" title="${escaparHTML(alumno.nombre)}">${alumno.nombre}</td>
             <td>${alumno.programa}</td>
             <td>${alumno.sala}</td>
             <td>
-                <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
-                <button class="btn btn-edit" onclick="editarAlumno(${alumno.id})" title="Editar datos">✏️</button>
+                <button class="btn btn-delete" onclick="event.stopPropagation(); eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
+                <button class="btn btn-edit" onclick="event.stopPropagation(); editarAlumno(${alumno.id})" title="Editar datos">✏️</button>
                 <button class="btn btn-calmes" onclick="event.stopPropagation(); verCalendario(${alumno.id})" title="Calendario de asistencia">➕</button>
                 <span class="marcado-por" title="${escaparHTML(tituloMarca)}">${marcadoPor ? escaparHTML(marcadoPor) : ''}</span>
             </td>
@@ -1141,6 +1141,45 @@ function seleccionarFila(id) {
     document.querySelectorAll('#alumnosBody tr').forEach(tr => {
         tr.classList.toggle('fila-seleccionada', String(tr.getAttribute('data-id')) === String(id));
     });
+}
+
+// Abrir un modal con los datos de la fila del alumno
+function verDetalleAlumno(id) {
+    seleccionarFila(id); // mantener la selección (sirve para "Cambiar Día")
+
+    const a = alumnosData.find(x => x.id === id);
+    if (!a) return;
+
+    const fecha = document.getElementById('fecha').value;
+    const reg = registrosAsistencia.find(r => r.alumno_id === id && r.fecha === fecha);
+    let estado = 'Sin registro';
+    if (reg) estado = reg.presente === 1 ? '✓ Presente' : '✗ Ausente';
+
+    const p = fecha ? fecha.split('-') : null;
+    const fechaFmt = (p && p.length === 3) ? `${p[2]}/${p[1]}/${p[0]}` : fecha;
+
+    const filas = [
+        ['Apellido', a.apellido],
+        ['Nombre', a.nombre],
+        ['Programa', a.programa || '—'],
+        ['Sala', a.sala || '—'],
+        ['Día de la semana', a.dia_semana],
+        [`Estado (${fechaFmt})`, estado]
+    ];
+
+    let html = '<dl class="detalle-list">';
+    filas.forEach(([k, v]) => {
+        html += `<dt>${escaparHTML(k)}</dt><dd>${escaparHTML(String(v))}</dd>`;
+    });
+    html += '</dl>';
+
+    document.getElementById('detalleContent').innerHTML = html;
+    document.getElementById('detalleTitulo').textContent = `${a.apellido}, ${a.nombre}`;
+    document.getElementById('detalleModal').style.display = 'block';
+}
+
+function cerrarDetalle() {
+    document.getElementById('detalleModal').style.display = 'none';
 }
 
 // Botón del panel: cambiar de día al alumno seleccionado

@@ -1002,6 +1002,24 @@
             font-weight: bold;
         }
 
+        .detalle-list {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 14px;
+            margin: 0;
+        }
+
+        .detalle-list dt {
+            font-weight: bold;
+            color: #777;
+        }
+
+        .detalle-list dd {
+            margin: 0;
+            color: #222;
+            word-break: break-word;
+        }
+
         .presencias-list {
             list-style: none;
             padding: 0;
@@ -1066,6 +1084,8 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal-content {
@@ -1189,7 +1209,7 @@
 
             /* Días en una sola fila, con nombre abreviado */
             .day-buttons {
-                gap: 8px;
+                gap: 10px;
                 flex-wrap: nowrap;
             }
 
@@ -1356,9 +1376,18 @@
 
             /* Modales */
             .modal-content {
-                margin: 12% auto;
+                margin: 4vh auto;
                 padding: 20px;
                 width: 92%;
+            }
+
+            /* Calendario más compacto para que entre mejor (sobre todo horizontal) */
+            .cal-cell {
+                min-height: 34px;
+            }
+
+            .cal-mark {
+                font-size: 16px;
             }
         }
     </style>
@@ -1609,6 +1638,19 @@
             <div class="modal-buttons">
                 <button class="btn btn-modal-confirm" onclick="validarClave()">Validar</button>
                 <button class="btn btn-modal-cancel" onclick="cerrarClaveModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de datos del alumno (al tocar la fila) -->
+    <div id="detalleModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarDetalle()">&times;</span>
+            <h2>👤 Datos del alumno</h2>
+            <p id="detalleTitulo" style="font-weight:bold; color:#555; margin-bottom:12px;"></p>
+            <div id="detalleContent"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-modal-confirm" onclick="cerrarDetalle()">Cerrar</button>
             </div>
         </div>
     </div>
