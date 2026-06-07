@@ -723,24 +723,46 @@ function exportarExcel() {
 
 // Filtrar alumnos por búsqueda
 function filtrarAlumnos() {
-    const busqueda = document.getElementById('busqueda').value.toLowerCase();
-    const tbody = document.getElementById('alumnosBody');
+    const busqueda = document.getElementById('busqueda').value.toLowerCase().trim();
 
     if (!busqueda) {
+        // Sin texto: mostrar el día actual normalmente
         aplicarFiltroAsistencia();
+        actualizarEstadisticasDelDia();
         return;
     }
 
-    // Buscar solo en el día seleccionado
-    const filtrados = alumnosFiltrados.filter(alumno =>
-        alumno.apellido.toLowerCase().includes(busqueda) ||
-        alumno.nombre.toLowerCase().includes(busqueda) ||
-        alumno.programa.toLowerCase().includes(busqueda) ||
-        alumno.sala.toLowerCase().includes(busqueda)
-    );
+    const coincide = (a) =>
+        (a.apellido || '').toLowerCase().includes(busqueda) ||
+        (a.nombre || '').toLowerCase().includes(busqueda) ||
+        (a.programa || '').toLowerCase().includes(busqueda) ||
+        (a.sala || '').toLowerCase().includes(busqueda);
 
-    renderizarAlumnos(filtrados);
-    actualizarEstadisticasDelDia();
+    // Buscar en TODOS los días (no solo en el día seleccionado)
+    const coincidencias = alumnosData.filter(coincide);
+
+    if (coincidencias.length === 0) {
+        renderizarAlumnos([]);
+        return;
+    }
+
+    // Si no hay coincidencias en el día actual, posicionarse en el día de la primera coincidencia
+    const hayEnDiaActual = coincidencias.some(a => a.dia_semana === diaSeleccionado);
+    if (!hayEnDiaActual) {
+        const nuevoDia = coincidencias[0].dia_semana;
+        diaSeleccionado = nuevoDia;
+        _alumnoSeleccionado = null;
+        document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
+        const btn = document.querySelector(`.day-btn[data-dia="${nuevoDia}"]`);
+        if (btn) btn.classList.add('active');
+        // Base del día (para estadísticas) y actualizar contadores
+        alumnosFiltrados = alumnosData.filter(a => a.dia_semana === nuevoDia);
+        actualizarEstadisticasDelDia();
+    }
+
+    // Mostrar las coincidencias del día ahora seleccionado (render inmediato)
+    const delDia = coincidencias.filter(a => a.dia_semana === diaSeleccionado);
+    renderizarAlumnos(delDia);
 }
 
 // Agregar nuevo alumno
@@ -1053,7 +1075,6 @@ function renderizarAlumnos(alumnos) {
                 <button class="btn btn-delete" onclick="eliminarAlumno(${alumno.id})" title="Eliminar alumno">🗑️</button>
                 <button class="btn btn-edit" onclick="editarAlumno(${alumno.id})" title="Editar datos">✏️</button>
                 <button class="btn btn-calmes" onclick="event.stopPropagation(); verCalendario(${alumno.id})" title="Calendario de asistencia">➕</button>
-                <button class="btn btn-cal" onclick="event.stopPropagation(); verPresencias(${alumno.id})" title="Fechas presente">📅</button>
                 <span class="marcado-por" title="${escaparHTML(tituloMarca)}">${marcadoPor ? escaparHTML(marcadoPor) : ''}</span>
             </td>
         </tr>
