@@ -1146,6 +1146,7 @@ function seleccionarFila(id) {
 // Abrir un modal con los datos de la fila del alumno
 function verDetalleAlumno(id) {
     seleccionarFila(id); // mantener la selección (sirve para "Cambiar Día")
+    _detalleAlumnoId = id;
 
     const a = alumnosData.find(x => x.id === id);
     if (!a) return;
@@ -1180,6 +1181,14 @@ function verDetalleAlumno(id) {
 
 function cerrarDetalle() {
     document.getElementById('detalleModal').style.display = 'none';
+}
+
+// Abrir el calendario del alumno desde el modal de datos
+let _detalleAlumnoId = null;
+function verCalendarioDesdeDetalle() {
+    const id = _detalleAlumnoId;
+    cerrarDetalle();
+    if (id != null) verCalendario(id);
 }
 
 // Botón del panel: cambiar de día al alumno seleccionado

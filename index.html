@@ -1020,6 +1020,15 @@
             word-break: break-word;
         }
 
+        .btn-detalle-cal {
+            background: #66BB6A;
+            color: white;
+        }
+
+        .btn-detalle-cal:hover {
+            background: #4CAF50;
+        }
+
         .presencias-list {
             list-style: none;
             padding: 0;
@@ -1650,6 +1659,7 @@
             <p id="detalleTitulo" style="font-weight:bold; color:#555; margin-bottom:12px;"></p>
             <div id="detalleContent"></div>
             <div class="modal-buttons">
+                <button class="btn btn-detalle-cal" onclick="verCalendarioDesdeDetalle()" title="Ver calendario de asistencia">➕ Ver calendario</button>
                 <button class="btn btn-modal-confirm" onclick="cerrarDetalle()">Cerrar</button>
             </div>
         </div>
