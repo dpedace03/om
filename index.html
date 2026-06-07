@@ -603,6 +603,11 @@
             color: #333;
         }
 
+        /* En web se muestra el nombre completo; el abreviado solo en celular */
+        .day-btn .dia-corto {
+            display: none;
+        }
+
         .day-btn.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -1158,13 +1163,25 @@
                 max-width: none;
             }
 
+            /* Días en una sola fila, con nombre abreviado */
             .day-buttons {
-                gap: 8px;
+                gap: 4px;
+                flex-wrap: nowrap;
             }
 
             .day-btn {
-                padding: 9px 16px;
-                font-size: 14px;
+                flex: 1 1 0;
+                min-width: 0;
+                padding: 10px 2px;
+                font-size: 13px;
+            }
+
+            .day-btn .dia-largo {
+                display: none;
+            }
+
+            .day-btn .dia-corto {
+                display: inline;
             }
 
             .stats-header {
@@ -1205,10 +1222,19 @@
                 width: 100%;
             }
 
-            /* Buscador más ancho en celular */
+            /* Buscador y botón + en la misma fila (el input se achica) */
+            .search-section {
+                flex-wrap: nowrap;
+            }
+
             .search-section input[type="text"] {
                 flex: 1 1 auto;
+                min-width: 0;
                 max-width: none;
+            }
+
+            .btn-add-icon {
+                flex: 0 0 auto;
             }
 
             /* Fuente 16px en los campos: evita el zoom automático en iOS */
@@ -1258,23 +1284,23 @@
 
             .sticky-col-1 {
                 left: 0;
-                width: 48px;
-                min-width: 48px;
-                max-width: 48px;
+                width: 44px;
+                min-width: 44px;
+                max-width: 44px;
             }
 
             .sticky-col-2 {
-                left: 48px;
-                width: 96px;
-                min-width: 96px;
-                max-width: 96px;
+                left: 44px;
+                width: 86px;
+                min-width: 86px;
+                max-width: 86px;
             }
 
             .sticky-col-3 {
-                left: 144px;
-                width: 96px;
-                min-width: 96px;
-                max-width: 96px;
+                left: 130px;
+                width: 86px;
+                min-width: 86px;
+                max-width: 86px;
                 box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.3);
             }
 
@@ -1283,6 +1309,26 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+
+            /* Para ver mejor la fila: ocultar Programa y Sala en celular */
+            #alumnosTable th:nth-child(4), #alumnosTable td:nth-child(4),
+            #alumnosTable th:nth-child(5), #alumnosTable td:nth-child(5) {
+                display: none;
+            }
+
+            /* Botones de acción más compactos */
+            #alumnosBody .btn-delete,
+            #alumnosBody .btn-edit,
+            #alumnosBody .btn-calmes,
+            #alumnosBody .btn-cal {
+                padding: 4px 5px;
+                font-size: 14px;
+            }
+
+            /* El nombre de quién marcó se oculta en celular para que entre la fila */
+            #alumnosBody .marcado-por {
+                display: none;
             }
 
             /* Modales */
@@ -1322,13 +1368,13 @@
 
             <div class="center-section">
                 <div class="day-buttons">
-                    <button class="day-btn lunes" data-dia="Lunes">Lunes</button>
-                    <button class="day-btn martes" data-dia="Martes">Martes</button>
-                    <button class="day-btn miercoles" data-dia="Miércoles">Miércoles</button>
-                    <button class="day-btn jueves" data-dia="Jueves">Jueves</button>
-                    <button class="day-btn viernes" data-dia="Viernes">Viernes</button>
-                    <button class="day-btn sabado" data-dia="Sábado">Sábado</button>
-                    <button class="day-btn domingo" data-dia="Domingo">Domingo</button>
+                    <button class="day-btn lunes" data-dia="Lunes"><span class="dia-largo">Lunes</span><span class="dia-corto">LUN</span></button>
+                    <button class="day-btn martes" data-dia="Martes"><span class="dia-largo">Martes</span><span class="dia-corto">MAR</span></button>
+                    <button class="day-btn miercoles" data-dia="Miércoles"><span class="dia-largo">Miércoles</span><span class="dia-corto">MIÉ</span></button>
+                    <button class="day-btn jueves" data-dia="Jueves"><span class="dia-largo">Jueves</span><span class="dia-corto">JUE</span></button>
+                    <button class="day-btn viernes" data-dia="Viernes"><span class="dia-largo">Viernes</span><span class="dia-corto">VIE</span></button>
+                    <button class="day-btn sabado" data-dia="Sábado"><span class="dia-largo">Sábado</span><span class="dia-corto">SÁB</span></button>
+                    <button class="day-btn domingo" data-dia="Domingo"><span class="dia-largo">Domingo</span><span class="dia-corto">DOM</span></button>
                 </div>
 
                 <div class="stats-header">
